@@ -1,0 +1,9 @@
+@import url('https://fonts.cdnfonts.com/css/mabry-pro');
+
+:root {
+  --font-mabry: 'Mabry Pro', 'Inter', system-ui, sans-serif;
+}
+
+body {
+  font-family: var(--font-mabry);
+}

@@ -1,0 +1,203 @@
+import { useState } from "react";
+import { FlashIcon, StopWatchIcon, CrownIcon, StarIcon, MedalFirstPlaceIcon, BombIcon, ArrowRightBigIcon } from "hugeicons-react";
+import { MinesweeperBoard } from "./game/MinesweeperBoard";
+import { useGameLogic } from "./game/useGameLogic";
+
+const TOP_PLAYERS = [
+  { rank: 1, name: "NovakD", city: "Belgrade", time: "0:47", accuracy: 98, medal: "gold" },
+  { rank: 2, name: "AliyaM", city: "Almaty", time: "0:52", accuracy: 96, medal: "silver" },
+  { rank: 3, name: "KimJH", city: "Seoul", time: "0:58", accuracy: 95, medal: "bronze" },
+  { rank: 4, name: "MariaG", city: "Madrid", time: "1:02", accuracy: 94, medal: null },
+  { rank: 5, name: "AhmedK", city: "Cairo", time: "1:08", accuracy: 93, medal: null },
+];
+
+function RankMedal({ rank }: { rank: number }) {
+  if (rank === 1) return <MedalFirstPlaceIcon size={16} color="#F5C060" />;
+  if (rank === 2) return <StarIcon size={16} color="#A8A4B8" />;
+  if (rank === 3) return <StarIcon size={16} color="#C07010" />;
+  return <span style={{ color: "var(--mm-text-3)", fontSize: "13px", fontWeight: 700, width: "16px", textAlign: "center" }}>#{rank}</span>;
+}
+
+export function DailyChallenge() {
+  const { board, status, revealCell, toggleFlag, time, formatTime, minesLeft, accuracy, resetGame } = useGameLogic("daily");
+  const [attempted, setAttempted] = useState(false);
+
+  const handlePlay = () => setAttempted(true);
+
+  return (
+    <div className="min-h-screen" style={{ background: "var(--mm-bg)" }}>
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <FlashIcon size={18} color="var(--mm-amber)" />
+              <span style={{ color: "var(--mm-amber)", fontSize: "13px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" }}>Daily Challenge</span>
+            </div>
+            <h1 style={{ color: "var(--mm-text)", fontSize: "32px", fontWeight: 800, letterSpacing: "-0.03em" }}>
+              May 13, 2026
+            </h1>
+            <p style={{ color: "var(--mm-text-2)", fontSize: "14px" }}>Seed #20260513 · Same board for everyone</p>
+          </div>
+
+          <div className="flex gap-3">
+            <div className="rounded-xl p-4 text-center" style={{ background: "var(--mm-surface-2)", border: "1px solid var(--mm-border)", minWidth: "80px" }}>
+              <p style={{ color: "var(--mm-amber)", fontSize: "24px", fontWeight: 800 }}>4,218</p>
+              <p style={{ color: "var(--mm-text-3)", fontSize: "11px" }}>Attempts</p>
+            </div>
+            <div className="rounded-xl p-4 text-center" style={{ background: "var(--mm-surface-2)", border: "1px solid var(--mm-border)", minWidth: "80px" }}>
+              <p style={{ color: "var(--mm-green)", fontSize: "24px", fontWeight: 800 }}>3</p>
+              <p style={{ color: "var(--mm-text-3)", fontSize: "11px" }}>Attempts left</p>
+            </div>
+            <div className="rounded-xl p-4 text-center" style={{ background: "var(--mm-surface-2)", border: "1px solid var(--mm-border)", minWidth: "80px" }}>
+              <p style={{ color: "var(--mm-blue)", fontSize: "24px", fontWeight: 800 }}>0:47</p>
+              <p style={{ color: "var(--mm-text-3)", fontSize: "11px" }}>Best today</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Game board */}
+          <div className="lg:col-span-2">
+            <div
+              className="rounded-2xl p-6"
+              style={{ background: "var(--mm-surface-1)", border: "1px solid var(--mm-border)" }}
+            >
+              {!attempted ? (
+                <div className="flex flex-col items-center gap-6 py-8">
+                  {/* Preview board (blurred) */}
+                  <div className="relative">
+                    <div className="opacity-30 pointer-events-none select-none">
+                      <MinesweeperBoard board={board} status="idle" onReveal={() => {}} onFlag={() => {}} />
+                    </div>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-4"
+                      style={{ backdropFilter: "blur(3px)" }}>
+                      <div
+                        className="rounded-2xl p-6 text-center"
+                        style={{ background: "rgba(13,15,23,0.9)", border: "1px solid var(--mm-border-2)", maxWidth: "260px" }}
+                      >
+                        <FlashIcon size={32} color="var(--mm-amber)" style={{ margin: "0 auto 12px" }} />
+                        <p style={{ color: "var(--mm-text)", fontSize: "16px", fontWeight: 700, marginBottom: "8px" }}>Ready for today's challenge?</p>
+                        <p style={{ color: "var(--mm-text-3)", fontSize: "13px", marginBottom: "16px" }}>You have 3 attempts. Make them count.</p>
+                        <button
+                          onClick={handlePlay}
+                          className="w-full rounded-xl py-3 flex items-center justify-center gap-2 transition-all hover:brightness-110"
+                          style={{
+                            background: "linear-gradient(135deg, var(--mm-amber), var(--mm-amber-dim))",
+                            color: "var(--mm-bg)",
+                            fontSize: "14px",
+                            fontWeight: 700,
+                            fontFamily: "var(--font-mabry)",
+                            boxShadow: "0 4px 16px var(--mm-amber-glow-strong)",
+                          }}
+                        >
+                          <ArrowRightBigIcon size={16} color="var(--mm-bg)" />
+                          Begin Challenge
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-4">
+                  <div className="w-full flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-1.5" style={{ color: "var(--mm-amber)" }}>
+                        <StopWatchIcon size={14} color="var(--mm-amber)" />
+                        <span style={{ fontSize: "20px", fontWeight: 800 }}>{formatTime(time)}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <BombIcon size={14} color="var(--mm-red)" />
+                        <span style={{ color: "var(--mm-red)", fontSize: "16px", fontWeight: 700 }}>{minesLeft}</span>
+                      </div>
+                    </div>
+                    <div
+                      className="px-3 py-1.5 rounded-lg flex items-center gap-1.5"
+                      style={{ background: "var(--mm-green-glow)", border: "1px solid rgba(76,217,123,0.2)" }}
+                    >
+                      <div className="w-1.5 h-1.5 rounded-full" style={{ background: "var(--mm-green)", animation: "pulse 2s infinite" }} />
+                      <span style={{ color: "var(--mm-green)", fontSize: "12px" }}>Live</span>
+                    </div>
+                  </div>
+
+                  <div className="overflow-auto max-w-full">
+                    <MinesweeperBoard board={board} status={status} onReveal={revealCell} onFlag={toggleFlag} />
+                  </div>
+
+                  {status !== "idle" && status !== "playing" && (
+                    <div className="w-full rounded-xl p-4 text-center"
+                      style={{
+                        background: status === "won" ? "var(--mm-green-glow)" : "var(--mm-red-glow)",
+                        border: `1px solid ${status === "won" ? "rgba(76,217,123,0.3)" : "rgba(229,90,90,0.3)"}`,
+                      }}>
+                      <p style={{ color: status === "won" ? "var(--mm-green)" : "var(--mm-red)", fontSize: "16px", fontWeight: 700 }}>
+                        {status === "won" ? `🎉 Solved in ${formatTime(time)}! Accuracy: ${accuracy}%` : "💥 Mine hit! 2 attempts remaining"}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Sidebar */}
+          <div className="flex flex-col gap-4">
+            {/* Today's leaderboard */}
+            <div
+              className="rounded-2xl p-5"
+              style={{ background: "var(--mm-surface-1)", border: "1px solid var(--mm-border)" }}
+            >
+              <div className="flex items-center gap-2 mb-4">
+                <CrownIcon size={16} color="var(--mm-amber)" />
+                <span style={{ color: "var(--mm-text)", fontSize: "14px", fontWeight: 700 }}>Today's Top</span>
+              </div>
+              <div className="flex flex-col gap-2">
+                {TOP_PLAYERS.map(p => (
+                  <div
+                    key={p.rank}
+                    className="flex items-center gap-3 rounded-xl px-3 py-2.5"
+                    style={{
+                      background: p.rank === 1 ? "rgba(232,160,32,0.08)" : "var(--mm-surface-2)",
+                      border: `1px solid ${p.rank === 1 ? "rgba(232,160,32,0.2)" : "var(--mm-border)"}`,
+                    }}
+                  >
+                    <RankMedal rank={p.rank} />
+                    <div className="flex-1 min-w-0">
+                      <p style={{ color: "var(--mm-text)", fontSize: "13px", fontWeight: 600 }}>{p.name}</p>
+                      <p style={{ color: "var(--mm-text-3)", fontSize: "11px" }}>{p.city}</p>
+                    </div>
+                    <div className="text-right">
+                      <p style={{ color: "var(--mm-amber)", fontSize: "13px", fontWeight: 700 }}>{p.time}</p>
+                      <p style={{ color: "var(--mm-text-3)", fontSize: "10px" }}>{p.accuracy}%</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Info card */}
+            <div
+              className="rounded-2xl p-5"
+              style={{ background: "var(--mm-surface-1)", border: "1px solid var(--mm-border)" }}
+            >
+              <p style={{ color: "var(--mm-text)", fontSize: "13px", fontWeight: 600, marginBottom: "12px" }}>Daily Rules</p>
+              <ul className="flex flex-col gap-2">
+                {[
+                  "Same board for all players worldwide",
+                  "3 attempts per day",
+                  "Timer starts on first click",
+                  "No AI Coach hints in Daily mode",
+                ].map(r => (
+                  <li key={r} className="flex items-start gap-2">
+                    <span style={{ color: "var(--mm-amber)", fontSize: "12px" }}>•</span>
+                    <span style={{ color: "var(--mm-text-3)", fontSize: "12px" }}>{r}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
