@@ -102,7 +102,7 @@ export function Leaderboard() {
                       </span>
                       {(p as any).streak >= 20 && <FireIcon size={12} color="var(--mm-red)" />}
                     </div>
-                    <span style={{ color: "var(--mm-text-3)", fontSize: "11px" }}>{(p as any).city || "Almaty"} {(p as any).country || ""}</span>
+                    <span style={{ color: "var(--mm-text-3)", fontSize: "11px" }}>{(p as any).city || t("leaderboardCity")} {(p as any).country || ""}</span>
                   </div>
                 </div>
                 <span style={{ color: "var(--mm-text)", fontSize: "13px", fontWeight: 600 }}>{p.wins.toLocaleString()}</span>
