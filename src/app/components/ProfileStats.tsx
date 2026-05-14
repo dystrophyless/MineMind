@@ -30,11 +30,11 @@ export function ProfileStats() {
     { name: "profileBadgeScholar", desc: "profileBadgeScholarDesc", icon: <BrainIcon size={24} color="var(--mm-amber)" />, unlocked: false },
   ];
   const recentGames = [
-    { diff: t("difficultyAdvanced"), time: "2:14", accuracy: 96, result: t("profileWon"), date: t("profileToday") },
-    { diff: t("difficultyAdvanced"), time: "1:58", accuracy: 98, result: t("profileWon"), date: t("profileToday") },
-    { diff: t("difficultyExpert"), time: "-", accuracy: 72, result: t("profileLost"), date: t("profileToday") },
-    { diff: t("difficultyBeginner"), time: "1:24", accuracy: 100, result: t("profileWon"), date: t("profileYesterday") },
-    { diff: t("difficultyAdvanced"), time: "2:37", accuracy: 95, result: t("profileWon"), date: t("profileYesterday") },
+    { diff: t("difficultyAdvanced"), time: "2:14", accuracy: 96, result: t("profileWon"), date: t("profileDateToday") },
+    { diff: t("difficultyAdvanced"), time: "1:58", accuracy: 98, result: t("profileWon"), date: t("profileDateToday") },
+    { diff: t("difficultyExpert"), time: "-", accuracy: 72, result: t("profileLost"), date: t("profileDateToday") },
+    { diff: t("difficultyBeginner"), time: "1:24", accuracy: 100, result: t("profileWon"), date: t("profileDateYesterday") },
+    { diff: t("difficultyAdvanced"), time: "2:37", accuracy: 95, result: t("profileWon"), date: t("profileDateYesterday") },
   ];
 
   return (
