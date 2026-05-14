@@ -3,6 +3,8 @@ import { useT } from "../i18n/LocaleProvider";
 import type { ReactNode } from "react";
 import type { TranslationKey } from "../i18n/translations";
 
+type RecentGameResult = "won" | "lost";
+
 function ProgressBar({ value, max, color }: { value: number; max: number; color: string }) {
   return (
     <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "var(--mm-surface-3)" }}>
@@ -29,12 +31,12 @@ export function ProfileStats() {
     { name: "profileBadgeGrandmaster", desc: "profileBadgeGrandmasterDesc", icon: <CrownIcon size={24} color="var(--mm-amber)" />, unlocked: false },
     { name: "profileBadgeScholar", desc: "profileBadgeScholarDesc", icon: <BrainIcon size={24} color="var(--mm-amber)" />, unlocked: false },
   ];
-  const recentGames = [
-    { diff: t("difficultyAdvanced"), time: "2:14", accuracy: 96, result: t("profileWon"), date: t("profileDateToday") },
-    { diff: t("difficultyAdvanced"), time: "1:58", accuracy: 98, result: t("profileWon"), date: t("profileDateToday") },
-    { diff: t("difficultyExpert"), time: "-", accuracy: 72, result: t("profileLost"), date: t("profileDateToday") },
-    { diff: t("difficultyBeginner"), time: "1:24", accuracy: 100, result: t("profileWon"), date: t("profileDateYesterday") },
-    { diff: t("difficultyAdvanced"), time: "2:37", accuracy: 95, result: t("profileWon"), date: t("profileDateYesterday") },
+  const recentGames: { diff: string; time: string; accuracy: number; result: RecentGameResult; date: string }[] = [
+    { diff: t("difficultyAdvanced"), time: "2:14", accuracy: 96, result: "won", date: t("profileDateToday") },
+    { diff: t("difficultyAdvanced"), time: "1:58", accuracy: 98, result: "won", date: t("profileDateToday") },
+    { diff: t("difficultyExpert"), time: "-", accuracy: 72, result: "lost", date: t("profileDateToday") },
+    { diff: t("difficultyBeginner"), time: "1:24", accuracy: 100, result: "won", date: t("profileDateYesterday") },
+    { diff: t("difficultyAdvanced"), time: "2:37", accuracy: 95, result: "won", date: t("profileDateYesterday") },
   ];
 
   return (
@@ -111,7 +113,7 @@ export function ProfileStats() {
             <div className="flex flex-col gap-2">
               {recentGames.map((g, i) => (
                 <div key={i} className="flex items-center gap-3 rounded-xl px-3 py-2.5" style={{ background: "var(--mm-surface-2)", border: "1px solid var(--mm-border)" }}>
-                  <div className="w-2 h-2 rounded-full shrink-0" style={{ background: g.result === t("profileWon") ? "var(--mm-green)" : "var(--mm-red)" }} />
+                  <div className="w-2 h-2 rounded-full shrink-0" style={{ background: g.result === "won" ? "var(--mm-green)" : "var(--mm-red)" }} />
                   <span style={{ color: "var(--mm-text-2)", fontSize: "12px", flex: 1 }}>{g.diff}</span>
                   <span style={{ color: "var(--mm-amber)", fontSize: "12px", fontWeight: 700 }}>{g.time}</span>
                   <span style={{ color: "var(--mm-blue)", fontSize: "12px" }}>{g.accuracy}%</span>
