@@ -57,12 +57,12 @@ function Cell({
         <div
           className={`${size} flex items-center justify-center rounded-sm select-none`}
           style={{
-            background: "linear-gradient(135deg, #3D1B1B, #2A1010)",
+            background: "var(--mm-cell-mine-bg)",
             boxShadow: "var(--cell-open-shadow), 0 0 8px rgba(229,90,90,0.4)",
             border: "1px solid rgba(229,90,90,0.3)",
           }}
         >
-          <BombIcon size={mobileCompact ? 14 : 16} color="#E55A5A" />
+          <BombIcon size={mobileCompact ? 14 : 16} color="var(--mm-red)" />
         </div>
       );
     }
@@ -72,9 +72,9 @@ function Cell({
         <div
           className={`${size} rounded-sm select-none`}
           style={{
-            background: "linear-gradient(135deg, #0A0C14, #0F1220)",
+            background: "var(--mm-cell-empty-bg)",
             boxShadow: "var(--cell-open-shadow)",
-            border: "1px solid rgba(255,255,255,0.04)",
+            border: "1px solid var(--mm-border)",
           }}
         />
       );
@@ -84,9 +84,9 @@ function Cell({
       <div
         className={`${size} flex items-center justify-center rounded-sm select-none`}
         style={{
-          background: "linear-gradient(135deg, #0D1020, #111428)",
+          background: "var(--mm-cell-open-bg)",
           boxShadow: "var(--cell-open-shadow)",
-          border: "1px solid rgba(255,255,255,0.05)",
+          border: "1px solid var(--mm-border)",
           color: NUMBER_COLORS[cell.neighborMines] || "#EDE8DE",
           fontSize: mobileCompact ? "11px" : "13px",
           fontWeight: 700,
@@ -103,30 +103,30 @@ function Cell({
       <button
         className={`${size} flex items-center justify-center rounded-sm select-none cursor-pointer transition-transform active:scale-95`}
         style={{
-          background: "linear-gradient(145deg, #2A2240, #1C1830)",
+          background: "var(--mm-cell-flag-bg)",
           boxShadow: "var(--cell-closed-shadow), 0 0 8px var(--mm-amber-glow)",
           border: "1px solid var(--mm-border-amber)",
         }}
         onClick={handleClick}
         onContextMenu={handleRightClick}
       >
-        <RacingFlagIcon size={mobileCompact ? 13 : 15} color="#E8A020" />
+        <RacingFlagIcon size={mobileCompact ? 13 : 15} color="var(--mm-amber)" />
       </button>
     );
   }
 
-  let closedBg = "linear-gradient(145deg, #2A2D40, #1E2035)";
+  let closedBg = "var(--mm-cell-closed-bg)";
   let closedShadow = "var(--cell-closed-shadow)";
   let closedBorder = "1px solid var(--mm-border)";
   let glowEffect = "";
 
   if (isSafe) {
-    closedBg = "linear-gradient(145deg, #1A2E22, #162418)";
+    closedBg = "var(--mm-cell-safe-bg)";
     closedShadow = "var(--cell-closed-shadow), 0 0 10px var(--mm-green-glow)";
     closedBorder = "1px solid rgba(76,217,123,0.25)";
     glowEffect = "0 0 12px rgba(76,217,123,0.2)";
   } else if (isHighlighted) {
-    closedBg = "linear-gradient(145deg, #2A2220, #201A18)";
+    closedBg = "var(--mm-cell-danger-bg)";
     closedShadow = "var(--cell-closed-shadow), 0 0 10px var(--mm-red-glow)";
     closedBorder = "1px solid rgba(229,90,90,0.25)";
   }
@@ -150,9 +150,9 @@ export function MinesweeperBoard({ board, status, onReveal, onFlag, highlightedC
     <div
       className="inline-block p-3 rounded-xl"
       style={{
-        background: "linear-gradient(135deg, #0A0C14, #0D1020)",
+        background: "var(--mm-board-bg)",
         border: "1px solid var(--mm-border-2)",
-        boxShadow: "0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04)",
+        boxShadow: "var(--mm-board-shadow)",
       }}
     >
       <div

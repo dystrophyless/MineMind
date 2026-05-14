@@ -18,14 +18,14 @@ export const DIFFICULTY_CONFIG = {
 };
 
 export const NUMBER_COLORS: Record<number, string> = {
-  1: "#6B9FEF",
-  2: "#4CD97B",
-  3: "#E55A5A",
-  4: "#9B72EF",
-  5: "#E8A020",
-  6: "#50D8D0",
-  7: "#EDE8DE",
-  8: "#A8A4B8",
+  1: "var(--mm-blue)",
+  2: "var(--mm-green)",
+  3: "var(--mm-red)",
+  4: "var(--mm-purple)",
+  5: "var(--mm-amber)",
+  6: "var(--mm-cyan)",
+  7: "var(--mm-text)",
+  8: "var(--mm-text-2)",
 };
 
 type Board = CellState[][];

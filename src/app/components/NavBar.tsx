@@ -1,5 +1,8 @@
 import type { ReactNode } from "react";
-import { CrownIcon, FlashIcon, BrainIcon, StarIcon, ProfileIcon, MenuCircleIcon } from "hugeicons-react";
+import { CrownIcon, FlashIcon, BrainIcon, StarIcon, MenuCircleIcon } from "hugeicons-react";
+import { CircleUserRound, Hexagon } from "lucide-react";
+import { useT } from "../i18n/LocaleProvider";
+import { SettingsControls } from "./SettingsControls";
 
 type Page = "landing" | "game" | "daily" | "leaderboard" | "profile" | "design";
 
@@ -9,20 +12,22 @@ type Props = {
 };
 
 export function NavBar({ currentPage, onNavigate }: Props) {
+  const t = useT();
   const navItems: { page: Page; label: string; icon: ReactNode }[] = [
-    { page: "daily", label: "Daily", icon: <FlashIcon size={14} color="inherit" /> },
-    { page: "leaderboard", label: "Leaderboard", icon: <CrownIcon size={14} color="inherit" /> },
-    { page: "profile", label: "Stats", icon: <BrainIcon size={14} color="inherit" /> },
-    { page: "design", label: "Pro", icon: <StarIcon size={14} color="inherit" /> },
+    { page: "daily", label: t("navDaily"), icon: <FlashIcon size={14} color="inherit" /> },
+    { page: "leaderboard", label: t("navLeaderboard"), icon: <CrownIcon size={14} color="inherit" /> },
+    { page: "profile", label: t("navStats"), icon: <BrainIcon size={14} color="inherit" /> },
+    { page: "design", label: t("navPro"), icon: <StarIcon size={14} color="inherit" /> },
   ];
 
   return (
     <nav
       className="flex items-center justify-between px-6 py-3 relative z-50"
       style={{
-        background: "rgba(13,15,23,0.85)",
+        background: "var(--mm-nav-bg)",
         backdropFilter: "blur(20px)",
         borderBottom: "1px solid var(--mm-border)",
+        boxShadow: "var(--mm-nav-shadow)",
       }}
     >
       {/* Logo */}
@@ -33,14 +38,16 @@ export function NavBar({ currentPage, onNavigate }: Props) {
         <div
           className="w-8 h-8 rounded-lg flex items-center justify-center"
           style={{
-            background: "linear-gradient(135deg, var(--mm-amber), var(--mm-amber-dim))",
-            boxShadow: "0 2px 12px var(--mm-amber-glow-strong)",
+            background: "var(--mm-brand-mark-bg)",
+            border: "1px solid var(--mm-brand-mark-border)",
+            color: "var(--mm-brand-mark-color)",
+            boxShadow: "var(--mm-brand-mark-shadow)",
           }}
         >
-          <span style={{ color: "#0D0F17", fontSize: "16px", lineHeight: 1 }}>⬡</span>
+          <Hexagon size={15} strokeWidth={2.1} />
         </div>
         <span style={{ color: "var(--mm-text)", fontSize: "16px", fontWeight: 700, letterSpacing: "-0.02em" }}>
-          Mine<span style={{ color: "var(--mm-amber)" }}>Mind</span>
+          Mine<span style={{ color: "var(--mm-brand-text-accent)" }}>Mind</span>
         </span>
       </button>
 
@@ -52,12 +59,13 @@ export function NavBar({ currentPage, onNavigate }: Props) {
             onClick={() => onNavigate(item.page)}
             className="flex items-center gap-1.5 px-4 py-2 rounded-lg transition-all duration-200"
             style={{
-              background: currentPage === item.page ? "var(--mm-amber-glow)" : "transparent",
-              color: currentPage === item.page ? "var(--mm-amber)" : "var(--mm-text-2)",
+              background: currentPage === item.page ? "var(--mm-selected-bg)" : "transparent",
+              color: currentPage === item.page ? "var(--mm-selected-fg)" : "var(--mm-text-2)",
               fontSize: "13px",
               fontWeight: currentPage === item.page ? 600 : 500,
               fontFamily: "var(--font-mabry)",
-              border: currentPage === item.page ? "1px solid var(--mm-border-amber)" : "1px solid transparent",
+              border: currentPage === item.page ? "1px solid var(--mm-selected-border)" : "1px solid transparent",
+              boxShadow: currentPage === item.page ? "var(--mm-selected-shadow)" : "none",
             }}
           >
             {item.icon}
@@ -65,43 +73,49 @@ export function NavBar({ currentPage, onNavigate }: Props) {
             {item.page === "design" && (
               <span
                 className="px-1.5 py-0.5 rounded-full"
-                style={{ background: "var(--mm-amber)", color: "var(--mm-bg)", fontSize: "9px", fontWeight: 800 }}
+                style={{
+                  background: "var(--mm-pro-badge-bg)",
+                  color: "var(--mm-pro-badge-fg)",
+                  border: "1px solid var(--mm-pro-badge-border)",
+                  fontSize: "9px",
+                  fontWeight: 800,
+                }}
               >
-                PRO
+                {t("navPro").toUpperCase()}
               </span>
             )}
           </button>
         ))}
       </div>
 
-      {/* Right: Play + Profile */}
+      {/* Right: Theme + Profile */}
       <div className="flex items-center gap-2">
-        <button
-          onClick={() => onNavigate("game")}
-          className="hidden md:flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 hover:brightness-110 active:scale-95"
-          style={{
-            background: "linear-gradient(135deg, var(--mm-amber), var(--mm-amber-dim))",
-            color: "var(--mm-bg)",
-            fontSize: "13px",
-            fontWeight: 700,
-            fontFamily: "var(--font-mabry)",
-            boxShadow: "0 2px 10px var(--mm-amber-glow-strong)",
-          }}
-        >
-          Play Now
-        </button>
+        <div className="hidden md:block">
+          <SettingsControls />
+        </div>
         <button
           onClick={() => onNavigate("profile")}
-          className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center transition-all duration-200 hover:ring-2"
+          aria-label={t("mobileProfile")}
+          className="h-9 rounded-lg flex items-center justify-center md:justify-start gap-2 px-2 md:px-3 transition-all duration-200 hover:brightness-110 active:scale-95"
           style={{
-            background: "var(--mm-surface-3)",
-            border: "1px solid var(--mm-border-2)",
-            ringColor: "var(--mm-amber)",
+            background: currentPage === "profile" ? "var(--mm-amber-glow)" : "var(--mm-nav-control-bg)",
+            border: currentPage === "profile" ? "1px solid var(--mm-border-amber)" : "1px solid var(--mm-nav-control-border)",
+            color: currentPage === "profile" ? "var(--mm-amber)" : "var(--mm-text-2)",
+            boxShadow: "var(--mm-nav-control-shadow)",
           }}
         >
-          <ProfileIcon size={16} color="var(--mm-text-2)" />
+          <CircleUserRound size={17} strokeWidth={2.2} />
+          <span
+            className="hidden md:inline"
+            style={{ fontSize: "13px", fontWeight: 700, fontFamily: "var(--font-mabry)" }}
+          >
+            {t("mobileProfile")}
+          </span>
         </button>
         {/* Mobile menu */}
+        <div className="md:hidden">
+          <SettingsControls compact />
+        </div>
         <button
           className="md:hidden w-8 h-8 flex items-center justify-center"
           style={{ color: "var(--mm-text-2)" }}
