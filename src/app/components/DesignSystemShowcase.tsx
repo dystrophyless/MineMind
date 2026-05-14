@@ -109,7 +109,7 @@ export function DesignSystemShowcase() {
 
         <Section title={t("designButtons")}>
           <div className="flex flex-wrap gap-3">
-            <button className="px-6 py-3 rounded-xl transition-all hover:brightness-110" style={{ background: "var(--mm-action-bg)", color: "var(--mm-action-fg)", fontSize: "14px", fontWeight: 700, fontFamily: "var(--font-mabry)", boxShadow: "var(--mm-action-shadow)" }}>{t("designPrimary")}</button>
+            <button className="px-6 py-3 rounded-xl transition-all hover:brightness-110" style={{ background: "var(--mm-action-bg)", color: "var(--mm-action-fg)", fontSize: "14px", fontWeight: 700, fontFamily: "var(--font-mabry)" }}>{t("designPrimary")}</button>
             <button className="px-6 py-3 rounded-xl transition-all hover:brightness-110" style={{ background: "var(--mm-surface-2)", color: "var(--mm-text)", fontSize: "14px", fontWeight: 600, fontFamily: "var(--font-mabry)", border: "1px solid var(--mm-border-2)" }}>{t("designSecondary")}</button>
             <button className="px-6 py-3 rounded-xl transition-all" style={{ background: "transparent", color: "var(--mm-amber)", fontSize: "14px", fontWeight: 600, fontFamily: "var(--font-mabry)", border: "1px solid var(--mm-border-amber)" }}>{t("designGhost")}</button>
             <button className="px-6 py-3 rounded-xl transition-all" style={{ background: "var(--mm-surface-2)", color: "var(--mm-text-3)", fontSize: "14px", fontFamily: "var(--font-mabry)", border: "1px solid var(--mm-border)", cursor: "not-allowed", opacity: 0.5 }}>{t("designDisabled")}</button>
@@ -158,7 +158,7 @@ export function DesignSystemShowcase() {
                 <button key={label} className="px-3 py-1.5 rounded-lg" style={{ background: i === 0 ? "var(--mm-amber-glow)" : "transparent", color: i === 0 ? "var(--mm-amber)" : "var(--mm-text-3)", fontSize: "12px", border: i === 0 ? "1px solid var(--mm-border-amber)" : "1px solid transparent" }}>{label}</button>
               ))}
             </div>
-            <button className="px-4 py-2 rounded-lg" style={{ background: "var(--mm-action-bg)", color: "var(--mm-action-fg)", fontSize: "12px", fontWeight: 700, fontFamily: "var(--font-mabry)", boxShadow: "var(--mm-action-shadow)" }}>{t("navPlayNow")}</button>
+            <button className="px-4 py-2 rounded-lg" style={{ background: "var(--mm-action-bg)", color: "var(--mm-action-fg)", fontSize: "12px", fontWeight: 700, fontFamily: "var(--font-mabry)" }}>{t("navPlayNow")}</button>
           </div>
         </Section>
 

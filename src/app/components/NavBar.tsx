@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { CrownIcon, FlashIcon, BrainIcon, StarIcon, MenuCircleIcon } from "hugeicons-react";
 import { CircleUserRound, Hexagon } from "lucide-react";
 import { useT } from "../i18n/LocaleProvider";
@@ -13,6 +13,8 @@ type Props = {
 
 export function NavBar({ currentPage, onNavigate }: Props) {
   const t = useT();
+  const [hoveredPage, setHoveredPage] = useState<Page | null>(null);
+  const [profileHovered, setProfileHovered] = useState(false);
   const navItems: { page: Page; label: string; icon: ReactNode }[] = [
     { page: "daily", label: t("navDaily"), icon: <FlashIcon size={14} color="inherit" /> },
     { page: "leaderboard", label: t("navLeaderboard"), icon: <CrownIcon size={14} color="inherit" /> },
@@ -53,39 +55,31 @@ export function NavBar({ currentPage, onNavigate }: Props) {
 
       {/* Center nav — desktop */}
       <div className="hidden md:flex items-center gap-1">
-        {navItems.map(item => (
-          <button
-            key={item.page}
-            onClick={() => onNavigate(item.page)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg transition-all duration-200"
-            style={{
-              background: currentPage === item.page ? "var(--mm-selected-bg)" : "transparent",
-              color: currentPage === item.page ? "var(--mm-selected-fg)" : "var(--mm-text-2)",
-              fontSize: "13px",
-              fontWeight: currentPage === item.page ? 600 : 500,
-              fontFamily: "var(--font-mabry)",
-              border: currentPage === item.page ? "1px solid var(--mm-selected-border)" : "1px solid transparent",
-              boxShadow: currentPage === item.page ? "var(--mm-selected-shadow)" : "none",
-            }}
-          >
-            {item.icon}
-            {item.label}
-            {item.page === "design" && (
-              <span
-                className="px-1.5 py-0.5 rounded-full"
-                style={{
-                  background: "var(--mm-pro-badge-bg)",
-                  color: "var(--mm-pro-badge-fg)",
-                  border: "1px solid var(--mm-pro-badge-border)",
-                  fontSize: "9px",
-                  fontWeight: 800,
-                }}
+        {navItems.map(item => {
+          const isActive = currentPage === item.page;
+          const isHovered = hoveredPage === item.page;
+
+          return (
+            <button
+              key={item.page}
+              onClick={() => onNavigate(item.page)}
+              onMouseEnter={() => setHoveredPage(item.page)}
+              onMouseLeave={() => setHoveredPage(null)}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg transition-all duration-200"
+              style={{
+                background: isActive ? "var(--mm-selected-bg)" : isHovered ? "var(--mm-nav-hover-bg)" : "transparent",
+                color: isActive ? "var(--mm-selected-fg)" : isHovered ? "var(--mm-nav-hover-fg)" : "var(--mm-text-2)",
+                fontSize: "13px",
+                fontWeight: isActive ? 600 : 500,
+                fontFamily: "var(--font-mabry)",
+                border: isActive ? "1px solid var(--mm-selected-border)" : isHovered ? "1px solid var(--mm-nav-hover-border)" : "1px solid transparent",
+              }}
               >
-                {t("navPro").toUpperCase()}
-              </span>
-            )}
-          </button>
-        ))}
+                {item.icon}
+                {item.label}
+              </button>
+            );
+          })}
       </div>
 
       {/* Right: Theme + Profile */}
@@ -95,12 +89,14 @@ export function NavBar({ currentPage, onNavigate }: Props) {
         </div>
         <button
           onClick={() => onNavigate("profile")}
+          onMouseEnter={() => setProfileHovered(true)}
+          onMouseLeave={() => setProfileHovered(false)}
           aria-label={t("mobileProfile")}
-          className="h-9 rounded-lg flex items-center justify-center md:justify-start gap-2 px-2 md:px-3 transition-all duration-200 hover:brightness-110 active:scale-95"
+          className="h-9 rounded-lg flex items-center justify-center md:justify-start gap-2 px-2 md:px-3 transition-all duration-200 active:scale-95"
           style={{
-            background: currentPage === "profile" ? "var(--mm-amber-glow)" : "var(--mm-nav-control-bg)",
-            border: currentPage === "profile" ? "1px solid var(--mm-border-amber)" : "1px solid var(--mm-nav-control-border)",
-            color: currentPage === "profile" ? "var(--mm-amber)" : "var(--mm-text-2)",
+            background: currentPage === "profile" ? "var(--mm-amber-glow)" : profileHovered ? "var(--mm-nav-hover-bg)" : "var(--mm-nav-control-bg)",
+            border: currentPage === "profile" ? "1px solid var(--mm-border-amber)" : profileHovered ? "1px solid var(--mm-nav-hover-border)" : "1px solid var(--mm-nav-control-border)",
+            color: currentPage === "profile" ? "var(--mm-amber)" : profileHovered ? "var(--mm-nav-hover-fg)" : "var(--mm-text-2)",
             boxShadow: "var(--mm-nav-control-shadow)",
           }}
         >
