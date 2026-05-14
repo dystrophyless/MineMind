@@ -78,14 +78,18 @@ export function Leaderboard() {
             ))}
           </div>
 
-          {rows.map((p, i) => (
-            <div key={p.rank}>
-              {p.isMe && i > 0 && (
-                <div className="px-4 py-2" style={{ background: "var(--mm-surface-1)" }}>
-                  <span style={{ color: "var(--mm-text-3)", fontSize: "11px" }}>... {p.rank - 5} {t("leaderboardPositionsBelow")} ...</span>
-                </div>
-              )}
-              <div className="grid px-4 py-3.5 items-center" style={{ gridTemplateColumns: "60px 1fr 80px 80px 80px 80px", background: p.isMe ? "var(--mm-amber-glow)" : i % 2 === 0 ? "var(--mm-surface-1)" : "var(--mm-bg)", borderBottom: "1px solid var(--mm-border)", borderLeft: p.isMe ? "3px solid var(--mm-amber)" : "3px solid transparent" }}>
+          {rows.map((p, i) => {
+            const previousRank = rows[i - 1]?.rank;
+            const positionsBelow = previousRank ? p.rank - previousRank : 0;
+
+            return (
+              <div key={p.rank}>
+                {p.isMe && i > 0 && (
+                  <div className="px-4 py-2" style={{ background: "var(--mm-surface-1)" }}>
+                    <span style={{ color: "var(--mm-text-3)", fontSize: "11px" }}>... {positionsBelow} {t("leaderboardPositionsBelow")} ...</span>
+                  </div>
+                )}
+                <div className="grid px-4 py-3.5 items-center" style={{ gridTemplateColumns: "60px 1fr 80px 80px 80px 80px", background: p.isMe ? "var(--mm-amber-glow)" : i % 2 === 0 ? "var(--mm-surface-1)" : "var(--mm-bg)", borderBottom: "1px solid var(--mm-border)", borderLeft: p.isMe ? "3px solid var(--mm-amber)" : "3px solid transparent" }}>
                 <div className="flex items-center"><RankIcon rank={p.rank} /></div>
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: p.isMe ? "var(--mm-action-bg)" : "var(--mm-surface-3)", border: `1px solid ${p.isMe ? "var(--mm-amber)" : "var(--mm-border)"}` }}>
@@ -105,9 +109,10 @@ export function Leaderboard() {
                 <span style={{ color: "var(--mm-green)", fontSize: "13px", fontWeight: 600 }}>{p.winRate}%</span>
                 <span style={{ color: "var(--mm-amber)", fontSize: "13px", fontWeight: 700 }}>{p.bestTime}</span>
                 <span style={{ color: "var(--mm-blue)", fontSize: "13px" }}>{(p as any).accuracy ?? p.winRate}%</span>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         <p style={{ color: "var(--mm-text-3)", fontSize: "12px", textAlign: "center", marginTop: "16px" }}>{t("leaderboardFooter")}</p>
