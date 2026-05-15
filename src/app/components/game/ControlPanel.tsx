@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { StopWatchIcon, BombIcon, FireIcon, ArrowReloadHorizontalIcon, ShareKnowledgeIcon, StarIcon, DiamondIcon, FlashIcon } from "hugeicons-react";
+import { StopWatchIcon, BombIcon, FireIcon, ChartUpIcon, ArrowReloadHorizontalIcon, FlashIcon, CrownIcon, DiamondIcon, StarIcon } from "hugeicons-react";
 import { GameStatus } from "./useGameLogic";
 import { useT } from "../../i18n/LocaleProvider";
 
@@ -12,8 +12,12 @@ type Props = {
   minesLeft: number;
   status: GameStatus;
   onRestart: () => void;
+  currentStreak: number;
   timedMinesFound?: number;
-  timedBest?: number;
+  globalRank: number | null;
+  cityRank: number | null;
+  city: string | null;
+  onLeaderboardClick: () => void;
 };
 
 function StatBlock({ icon, label, value, color }: { icon: ReactNode; label: string; value: string | number; color?: string }) {
@@ -28,7 +32,7 @@ function StatBlock({ icon, label, value, color }: { icon: ReactNode; label: stri
   );
 }
 
-export function ControlPanel({ mode, onModeChange, time, minesLeft, status, onRestart, timedMinesFound = 0, timedBest = 0 }: Props) {
+export function ControlPanel({ mode, onModeChange, time, minesLeft, status, onRestart, currentStreak = 0, timedMinesFound = 0, globalRank, cityRank, city, onLeaderboardClick }: Props) {
   const t = useT();
   const modes: { key: GameMode; label: string }[] = [
     { key: "classic", label: t("mobileModeClassic") },
@@ -37,6 +41,7 @@ export function ControlPanel({ mode, onModeChange, time, minesLeft, status, onRe
     { key: "daily", label: t("mobileModeDaily") },
   ];
   const statusText = status === "won" ? t("controlsYouWon") : status === "lost" ? t("controlsMineHit") : t("controlsPlaying");
+  const scoreIcon = mode === "timed" ? <ChartUpIcon size={13} color="var(--mm-amber)" /> : <FireIcon size={13} color="var(--mm-amber)" />;
   const selectMode = (nextMode: GameMode) => {
     onModeChange(nextMode);
   };
@@ -58,7 +63,7 @@ export function ControlPanel({ mode, onModeChange, time, minesLeft, status, onRe
       </div>
 
       <div className="flex gap-3">
-        <StatBlock icon={<FireIcon size={13} color="var(--mm-amber)" />} label={mode === "timed" ? t("mobileTimedScore") : t("controlsStreak")} value={mode === "timed" ? `${timedMinesFound} / ${timedBest}` : "7"} color="var(--mm-amber)" />
+        <StatBlock icon={scoreIcon} label={mode === "timed" ? t("mobileTimedScore") : t("controlsStreak")} value={mode === "timed" ? timedMinesFound : currentStreak} color="var(--mm-amber)" />
       </div>
 
       {status !== "idle" && (
@@ -72,9 +77,25 @@ export function ControlPanel({ mode, onModeChange, time, minesLeft, status, onRe
         {t("controlsNewGame")}
       </button>
 
-      <button className="w-full rounded-xl py-3 flex items-center justify-center gap-2 transition-all duration-200 hover:brightness-110 active:scale-95" style={{ background: "var(--mm-surface-2)", color: "var(--mm-text-2)", fontSize: "14px", fontWeight: 600, fontFamily: "var(--font-mabry)", border: "1px solid var(--mm-border-2)" }}>
-        <ShareKnowledgeIcon size={16} color="var(--mm-text-2)" />
-        {t("controlsShareResult")}
+      <button onClick={onLeaderboardClick} className="w-full rounded-xl p-4 text-left transition-all duration-200 hover:brightness-110 active:scale-[0.99]" style={{ background: "var(--mm-surface-2)", border: "1px solid var(--mm-border-2)" }}>
+        <div className="flex items-center gap-2 mb-2">
+          <CrownIcon size={14} color="var(--mm-purple)" />
+          <span style={{ color: "var(--mm-purple)", fontSize: "12px", fontWeight: 700 }}>{t("leaderboardTitle")}</span>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="rounded-lg p-2" style={{ background: "var(--mm-surface-1)", border: "1px solid var(--mm-border)" }}>
+            <p style={{ color: "var(--mm-text-3)", fontSize: "10px", textTransform: "uppercase", fontWeight: 700 }}>{t("leaderboardGlobal")}</p>
+            <p style={{ color: "var(--mm-text)", fontSize: "20px", fontWeight: 800, lineHeight: 1.1, marginTop: "6px" }}>
+              {globalRank ? `#${globalRank}` : "—"}
+            </p>
+          </div>
+          <div className="rounded-lg p-2" style={{ background: "var(--mm-surface-1)", border: "1px solid var(--mm-border)" }}>
+            <p style={{ color: "var(--mm-text-3)", fontSize: "10px", textTransform: "uppercase", fontWeight: 700 }}>{city ?? t("leaderboardCity")}</p>
+            <p style={{ color: "var(--mm-text)", fontSize: "20px", fontWeight: 800, lineHeight: 1.1, marginTop: "6px" }}>
+              {cityRank ? `#${cityRank}` : "—"}
+            </p>
+          </div>
+        </div>
       </button>
 
       <div className="rounded-xl p-4" style={{ background: "var(--mm-pro-bg)", border: "1px solid rgba(155,114,239,0.25)" }}>
