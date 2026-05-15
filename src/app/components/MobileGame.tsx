@@ -1,117 +1,155 @@
 import { useState } from "react";
-import { BombIcon, StopWatchIcon, ArrowReloadHorizontalIcon, SparklesIcon, FlashIcon, CrownIcon, Menu01Icon, PlayIcon, ProfileIcon } from "hugeicons-react";
+import { BombIcon, StopWatchIcon, ArrowReloadHorizontalIcon } from "hugeicons-react";
+import { ChevronDownIcon } from "lucide-react";
 import { MinesweeperBoard } from "./game/MinesweeperBoard";
 import { useGameLogic, Difficulty } from "./game/useGameLogic";
-import { AICoach } from "./game/AICoach";
-import { SettingsControls } from "./SettingsControls";
 import { useT } from "../i18n/LocaleProvider";
 
-type BottomSheet = "controls" | "ai" | null;
+type MobileGameMode = "classic" | "noFlags" | "timed" | "daily";
+
+const MOBILE_TIMED_LIMIT_SECONDS = 90;
+
+const MOBILE_MODE_RATINGS: Record<MobileGameMode, number> = {
+  classic: 1240,
+  noFlags: 1180,
+  timed: 1310,
+  daily: 1275,
+};
 
 export function MobileGame() {
   const t = useT();
-  const [difficulty, setDifficulty] = useState<Difficulty>("beginner");
-  const [sheet, setSheet] = useState<BottomSheet>(null);
-  const { board, status, time, formatTime, minesLeft, revealCell, toggleFlag, resetGame } = useGameLogic(difficulty);
-  const difficultyLabels: Record<Difficulty, string> = {
-    beginner: t("difficultyBeginner"),
-    intermediate: t("difficultyAdvanced"),
-    expert: t("difficultyExpert"),
-    daily: t("difficultyDaily"),
+  const [mode, setMode] = useState<MobileGameMode>("classic");
+  const [modeMenuOpen, setModeMenuOpen] = useState(false);
+  const mobileDifficulty: Difficulty = mode === "daily" ? "daily" : "beginner";
+  const { board, status, time, timeRemaining, formatTime, minesLeft, revealCell, toggleFlag, resetGame } = useGameLogic(mobileDifficulty, {
+    allowFlags: mode !== "noFlags",
+    timeLimit: mode === "timed" ? MOBILE_TIMED_LIMIT_SECONDS : undefined,
+  });
+  const modeLabels: Record<MobileGameMode, string> = {
+    classic: t("mobileModeClassic"),
+    noFlags: t("mobileModeNoFlags"),
+    timed: t("mobileModeTimed"),
+    daily: t("mobileModeDaily"),
   };
+  const timerText = mode === "timed" && timeRemaining !== undefined ? formatTime(timeRemaining) : formatTime(time);
+  const resultText = status === "won"
+    ? `${t("mobileClearedIn")} ${formatTime(time)}!`
+    : mode === "timed" && timeRemaining === 0
+      ? t("mobileTimeUp")
+      : t("mobileTryAgain");
 
   return (
-    <div className="flex flex-col h-full select-none" style={{ background: "var(--mm-bg)", maxWidth: "430px", margin: "0 auto" }}>
-      <div className="flex items-center justify-between px-4 py-3 gap-2" style={{ background: "var(--mm-surface-1)", borderBottom: "1px solid var(--mm-border)" }}>
-        <span style={{ color: "var(--mm-text)", fontSize: "18px", fontWeight: 800 }}>Mine<span style={{ color: "var(--mm-amber)" }}>Mind</span></span>
-        <SettingsControls compact />
-        <div className="flex gap-2">
-          <button onClick={() => setSheet(sheet === "ai" ? null : "ai")} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: sheet === "ai" ? "var(--mm-amber-glow)" : "var(--mm-surface-3)", border: "1px solid var(--mm-border)" }}>
-            <SparklesIcon size={15} color="var(--mm-amber)" />
-          </button>
-          <button onClick={() => setSheet(sheet === "controls" ? null : "controls")} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: sheet === "controls" ? "var(--mm-amber-glow)" : "var(--mm-surface-3)", border: "1px solid var(--mm-border)" }}>
-            <Menu01Icon size={16} color="var(--mm-text-2)" />
-          </button>
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between px-4 py-2.5 gap-2" style={{ background: "var(--mm-surface-2)", borderBottom: "1px solid var(--mm-border)" }}>
-        <div className="flex items-center gap-1.5">
-          <StopWatchIcon size={13} color="var(--mm-amber)" />
-          <span style={{ color: "var(--mm-amber)", fontSize: "16px", fontWeight: 800 }}>{formatTime(time)}</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <BombIcon size={13} color="var(--mm-red)" />
-          <span style={{ color: "var(--mm-red)", fontSize: "16px", fontWeight: 800 }}>{minesLeft}</span>
-        </div>
-        <div className="px-2.5 py-1 rounded-lg" style={{ background: "var(--mm-surface-3)", border: "1px solid var(--mm-border)" }}>
-          <span style={{ color: "var(--mm-text-2)", fontSize: "12px" }}>{difficultyLabels[difficulty]}</span>
-        </div>
-        <button onClick={resetGame} className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "var(--mm-surface-3)", border: "1px solid var(--mm-border)" }}>
-          <ArrowReloadHorizontalIcon size={14} color="var(--mm-text-2)" />
-        </button>
-      </div>
-
-      <div className="flex-1 flex items-center justify-center p-4 overflow-auto" style={{ minHeight: "360px" }}>
-        <MinesweeperBoard board={board} status={status} onReveal={revealCell} onFlag={toggleFlag} mobileCompact />
-      </div>
-
-      {status !== "idle" && status !== "playing" && (
-        <div className="mx-4 mb-2 rounded-xl py-3 px-4 text-center" style={{ background: status === "won" ? "var(--mm-green-glow)" : "var(--mm-red-glow)", border: `1px solid ${status === "won" ? "rgba(76,217,123,0.3)" : "rgba(229,90,90,0.3)"}` }}>
-          <p style={{ color: status === "won" ? "var(--mm-green)" : "var(--mm-red)", fontSize: "14px", fontWeight: 700 }}>
-            {status === "won" ? `${t("mobileClearedIn")} ${formatTime(time)}!` : t("mobileTryAgain")}
-          </p>
-        </div>
-      )}
-
-      <div className="px-4 py-2 text-center">
-        <p style={{ color: "var(--mm-text-3)", fontSize: "11px" }}>{t("boardTouchHelp")}</p>
-      </div>
-
-      <div className="flex items-center justify-around py-3 px-4" style={{ background: "var(--mm-surface-1)", borderTop: "1px solid var(--mm-border)" }}>
-        {[
-          { icon: <FlashIcon size={18} color="var(--mm-amber)" />, label: t("navDaily") },
-          { icon: <CrownIcon size={18} color="var(--mm-text-3)" />, label: t("mobileRanks") },
-          { icon: <PlayIcon size={18} color="var(--mm-amber)" />, label: t("mobilePlay"), active: true },
-          { icon: <SparklesIcon size={18} color="var(--mm-text-3)" />, label: t("mobileAi") },
-          { icon: <ProfileIcon size={18} color="var(--mm-text-3)" />, label: t("mobileProfile") },
-        ].map(item => (
-          <button key={item.label} className="flex flex-col items-center gap-1">
-            {item.icon}
-            <span style={{ color: item.active ? "var(--mm-amber)" : "var(--mm-text-3)", fontSize: "10px" }}>{item.label}</span>
-          </button>
-        ))}
-      </div>
-
-      {sheet === "controls" && (
-        <div className="absolute bottom-0 left-0 right-0 rounded-t-3xl p-5 z-50" style={{ background: "var(--mm-surface-2)", border: "1px solid var(--mm-border-2)", boxShadow: "var(--mm-sheet-shadow)", maxWidth: "430px", margin: "0 auto" }}>
-          <div className="w-12 h-1 rounded-full mx-auto mb-5" style={{ background: "var(--mm-border-2)" }} />
-          <p style={{ color: "var(--mm-text)", fontSize: "16px", fontWeight: 700, marginBottom: "16px" }}>{t("mobileControls")}</p>
-          <div className="grid grid-cols-2 gap-2 mb-4">
-            {(["beginner", "intermediate", "expert", "daily"] as Difficulty[]).map(d => (
-              <button key={d} onClick={() => { setDifficulty(d); resetGame(); setSheet(null); }} className="rounded-xl py-3 transition-all" style={{ background: difficulty === d ? "var(--mm-selected-bg)" : "var(--mm-surface-3)", color: difficulty === d ? "var(--mm-selected-fg)" : "var(--mm-text-2)", fontSize: "13px", fontWeight: 700, fontFamily: "var(--font-mabry)", border: `1px solid ${difficulty === d ? "var(--mm-selected-border)" : "var(--mm-border)"}` }}>
-                {difficultyLabels[d]}
-              </button>
-            ))}
+    <div className="relative flex min-h-[100dvh] flex-col select-none overflow-hidden" style={{ background: "var(--mm-bg)", maxWidth: "430px", margin: "0 auto" }}>
+      <div className="flex items-center justify-between px-4 py-2.5 gap-3" style={{ background: "var(--mm-surface-2)", borderBottom: "1px solid var(--mm-border)" }}>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1.5">
+            <StopWatchIcon size={13} color="var(--mm-amber)" />
+            <span style={{ color: "var(--mm-amber)", fontSize: "16px", fontWeight: 800 }}>{timerText}</span>
           </div>
-          <button onClick={() => { resetGame(); setSheet(null); }} className="w-full rounded-xl py-3.5 flex items-center justify-center gap-2" style={{ background: "var(--mm-action-bg)", color: "var(--mm-action-fg)", fontSize: "14px", fontWeight: 700, fontFamily: "var(--font-mabry)" }}>
-            <ArrowReloadHorizontalIcon size={16} color="var(--mm-action-fg)" />
-            {t("controlsNewGame")}
+          <div className="flex items-center gap-1.5">
+            <BombIcon size={13} color="var(--mm-red)" />
+            <span style={{ color: "var(--mm-red)", fontSize: "16px", fontWeight: 800 }}>{minesLeft}</span>
+          </div>
+        </div>
+        <div className="flex items-center justify-end gap-2">
+          <div
+            className="relative"
+            onBlur={(event) => {
+              const nextTarget = event.relatedTarget;
+              if (!(nextTarget instanceof Node) || !event.currentTarget.contains(nextTarget)) {
+                setModeMenuOpen(false);
+              }
+            }}
+          >
+            <button
+              type="button"
+              aria-label={t("mobileModeSelect")}
+              aria-haspopup="listbox"
+              aria-expanded={modeMenuOpen}
+              onClick={() => setModeMenuOpen(open => !open)}
+              className="flex h-9 min-w-[112px] items-center justify-between gap-2 rounded-xl px-3"
+              style={{
+                background: "var(--mm-surface-3)",
+                border: "1px solid var(--mm-border)",
+                color: "var(--mm-text-2)",
+                fontSize: "12px",
+                fontFamily: "var(--font-mabry)",
+                fontWeight: 600,
+              }}
+            >
+              <span>{modeLabels[mode]}</span>
+              <ChevronDownIcon size={14} strokeWidth={2.3} />
+            </button>
+
+            {modeMenuOpen && (
+              <div
+                role="listbox"
+                className="absolute right-0 top-[calc(100%+6px)] z-30 w-[144px] overflow-hidden rounded-xl py-1"
+                style={{
+                  background: "var(--mm-surface-2)",
+                  border: "1px solid var(--mm-border-2)",
+                }}
+              >
+                {(Object.entries(modeLabels) as [MobileGameMode, string][]).map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    role="option"
+                    aria-selected={mode === key}
+                    onClick={() => {
+                      setMode(key);
+                      setModeMenuOpen(false);
+                    }}
+                    className="w-full px-3 py-2 text-left"
+                    style={{
+                      background: mode === key ? "var(--mm-amber-glow)" : "transparent",
+                      color: mode === key ? "var(--mm-amber)" : "var(--mm-text-2)",
+                      fontSize: "12px",
+                      fontFamily: "var(--font-mabry)",
+                      fontWeight: mode === key ? 800 : 600,
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={resetGame}
+            aria-label={t("controlsNewGame")}
+            className="h-9 w-9 rounded-xl flex items-center justify-center"
+            style={{ background: "var(--mm-amber-glow)", border: "1px solid var(--mm-border-amber)" }}
+          >
+            <ArrowReloadHorizontalIcon size={15} color="var(--mm-amber)" />
           </button>
         </div>
-      )}
+      </div>
 
-      {sheet === "ai" && (
-        <div className="absolute bottom-0 left-0 right-0 rounded-t-3xl p-5 z-50" style={{ background: "var(--mm-surface-2)", border: "1px solid var(--mm-border-2)", boxShadow: "var(--mm-sheet-shadow)", maxWidth: "430px", margin: "0 auto" }}>
-          <div className="w-12 h-1 rounded-full mx-auto mb-5" style={{ background: "var(--mm-border-2)" }} />
-          <AICoach status={status} />
-          <button className="w-full rounded-xl py-3 mt-3" onClick={() => setSheet(null)} style={{ background: "var(--mm-surface-3)", color: "var(--mm-text-2)", fontSize: "13px", fontFamily: "var(--font-mabry)", border: "1px solid var(--mm-border)" }}>
-            {t("mobileClose")}
-          </button>
+      <div className="flex items-center justify-between px-4 py-2" style={{ background: "var(--mm-bg)", borderBottom: "1px solid var(--mm-border)" }}>
+        <span style={{ color: "var(--mm-text-3)", fontSize: "11px", fontWeight: 700 }}>9 x 9</span>
+        <span style={{ color: "var(--mm-text-2)", fontSize: "11px", fontWeight: 700 }}>{modeLabels[mode]}</span>
+        <span style={{ color: "var(--mm-amber)", fontSize: "11px", fontWeight: 800 }}>{t("mobileRating")} {MOBILE_MODE_RATINGS[mode]}</span>
+      </div>
+
+      <div className="flex-1 grid place-items-center px-4 py-4 overflow-auto">
+        <div className="w-full pb-[calc(88px+env(safe-area-inset-bottom))]">
+          <div className="flex w-full flex-col items-center justify-center gap-6">
+            <MinesweeperBoard board={board} status={status} onReveal={revealCell} onFlag={toggleFlag} mobileCompact flagsEnabled={mode !== "noFlags"} />
+
+            {status !== "idle" && status !== "playing" && (
+              <div className="w-full rounded-xl py-3 px-4 text-center" style={{ background: status === "won" ? "var(--mm-green-glow)" : "var(--mm-red-glow)", border: `1px solid ${status === "won" ? "rgba(76,217,123,0.3)" : "rgba(229,90,90,0.3)"}` }}>
+                <p style={{ color: status === "won" ? "var(--mm-green)" : "var(--mm-red)", fontSize: "14px", fontWeight: 700 }}>
+                  {resultText}
+                </p>
+              </div>
+            )}
+
+            <p style={{ color: "var(--mm-text-3)", fontSize: "11px" }}>{mode === "noFlags" ? t("mobileNoFlagsHelp") : t("boardTouchHelp")}</p>
+          </div>
         </div>
-      )}
-
-      {sheet && <div className="absolute inset-0 z-40" style={{ background: "var(--mm-overlay)" }} onClick={() => setSheet(null)} />}
+      </div>
     </div>
   );
 }

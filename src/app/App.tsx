@@ -26,6 +26,9 @@ export default function App() {
   const [page, setPage] = useState<Page>("landing");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const isMobile = useIsMobile();
+  const showMobileGuestHome = isMobile && !isAuthenticated && page !== "login" && page !== "register";
+  const visiblePage = showMobileGuestHome ? "landing" : page;
+  const contentInsetClass = !isAuthenticated ? "pt-[64px] md:pt-0" : visiblePage === "game" ? "pb-0 md:pb-0" : "pb-[76px] md:pb-0";
 
   const navigate = (p: Page) => {
     setPage(p);
@@ -55,41 +58,35 @@ export default function App() {
     );
   }
 
-  if (isMobile && page === "game") {
-    return (
-      <div
-        className="size-full flex flex-col overflow-hidden relative"
-        style={{ background: "var(--mm-bg)", fontFamily: "var(--font-mabry)" }}
-      >
-        <MobileGame />
-      </div>
-    );
-  }
-
   return (
     <div
       className="size-full flex flex-col overflow-auto"
       style={{ background: "var(--mm-bg)", fontFamily: "var(--font-mabry)" }}
     >
       {/* Sticky nav */}
-      <div className="sticky top-0 z-50">
-        <NavBar currentPage={page} isAuthenticated={isAuthenticated} onNavigate={navigate} />
+      <div className="hidden md:block sticky top-0 z-50">
+        <NavBar currentPage={visiblePage} isAuthenticated={isAuthenticated} onNavigate={navigate} />
       </div>
 
       {/* Page content */}
-      <div className="flex-1">
-        {page === "landing" && (
+      <div className={`flex-1 ${contentInsetClass}`}>
+        {visiblePage === "landing" && (
           <LandingPage onPlay={() => navigate("game")} onDaily={() => navigate("daily")} />
         )}
-        {page === "game" && (
+        {visiblePage === "game" && isMobile && <MobileGame />}
+        {visiblePage === "game" && !isMobile && (
           <GameDashboard
             onNavigate={(p) => navigate(p as Page)}
           />
         )}
-        {page === "daily" && <DailyChallenge />}
-        {page === "leaderboard" && <Leaderboard />}
-        {page === "profile" && <ProfileStats />}
-        {page === "design" && <DesignSystemShowcase />}
+        {visiblePage === "daily" && <DailyChallenge />}
+        {visiblePage === "leaderboard" && <Leaderboard />}
+        {visiblePage === "profile" && <ProfileStats />}
+        {visiblePage === "design" && <DesignSystemShowcase />}
+      </div>
+
+      <div className="md:hidden">
+        <NavBar currentPage={visiblePage} isAuthenticated={isAuthenticated} onNavigate={navigate} />
       </div>
     </div>
   );

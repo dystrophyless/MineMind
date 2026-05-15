@@ -24,14 +24,12 @@ function LandingBrainImage() {
     <img
       src={LANDING_BRAIN_IMAGES[theme]}
       alt="Minesweeper brain board illustration"
-      className="w-full max-w-[560px] mx-auto"
+      className="w-full max-w-[560px] mx-auto mt-0 mb-4 lg:-mt-12 lg:-mb-16"
       loading="eager"
       decoding="async"
       style={{
         display: "block",
         objectFit: "contain",
-        marginTop: "-48px",
-        marginBottom: "-64px",
         transform: `scale(${LANDING_BRAIN_IMAGE_SCALE[theme]})`,
         transformOrigin: "center",
         filter: "drop-shadow(0 22px 42px rgba(0,0,0,0.20))",

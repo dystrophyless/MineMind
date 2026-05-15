@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, type CSSProperties } from "react";
 import { BombIcon, RacingFlagIcon } from "hugeicons-react";
 import { CellState, GameStatus, NUMBER_COLORS } from "./useGameLogic";
 
@@ -10,6 +10,7 @@ type Props = {
   highlightedCells?: Set<string>;
   safeCells?: Set<string>;
   mobileCompact?: boolean;
+  flagsEnabled?: boolean;
 };
 
 function Cell({
@@ -22,6 +23,7 @@ function Cell({
   isHighlighted,
   isSafe,
   mobileCompact,
+  flagsEnabled,
 }: {
   cell: CellState;
   row: number;
@@ -32,6 +34,7 @@ function Cell({
   isHighlighted?: boolean;
   isSafe?: boolean;
   mobileCompact?: boolean;
+  flagsEnabled: boolean;
 }) {
   const handleClick = useCallback(() => {
     if (status === "won" || status === "lost") return;
@@ -40,16 +43,25 @@ function Cell({
 
   const handleRightClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
+    if (!flagsEnabled) return;
     if (status === "won" || status === "lost" || cell.isRevealed) return;
     onFlag(row, col);
-  }, [row, col, status, cell.isRevealed, onFlag]);
+  }, [row, col, status, cell.isRevealed, flagsEnabled, onFlag]);
 
   const handleLongPress = useCallback(() => {
+    if (!flagsEnabled) return;
     if (status === "won" || status === "lost" || cell.isRevealed) return;
     onFlag(row, col);
-  }, [row, col, status, cell.isRevealed, onFlag]);
+  }, [row, col, status, cell.isRevealed, flagsEnabled, onFlag]);
 
-  const size = mobileCompact ? "w-8 h-8" : "w-9 h-9 md:w-10 md:h-10";
+  const size = mobileCompact ? "" : "w-9 h-9 md:w-10 md:h-10";
+  const mobileCellSize = mobileCompact
+    ? ({
+        width: "var(--mm-mobile-cell-size)",
+        height: "var(--mm-mobile-cell-size)",
+        minWidth: "var(--mm-mobile-cell-size)",
+      } as CSSProperties)
+    : undefined;
 
   if (cell.isRevealed) {
     if (cell.isMine) {
@@ -57,12 +69,13 @@ function Cell({
         <div
           className={`${size} flex items-center justify-center rounded-sm select-none`}
           style={{
+            ...mobileCellSize,
             background: "var(--mm-cell-mine-bg)",
             boxShadow: "var(--cell-open-shadow), 0 0 8px rgba(229,90,90,0.4)",
             border: "1px solid rgba(229,90,90,0.3)",
           }}
         >
-          <BombIcon size={mobileCompact ? 14 : 16} color="var(--mm-red)" />
+          <BombIcon size={mobileCompact ? "calc(var(--mm-mobile-cell-size) * 0.58)" : 16} color="var(--mm-red)" />
         </div>
       );
     }
@@ -72,6 +85,7 @@ function Cell({
         <div
           className={`${size} rounded-sm select-none`}
           style={{
+            ...mobileCellSize,
             background: "var(--mm-cell-empty-bg)",
             boxShadow: "var(--cell-open-shadow)",
             border: "1px solid var(--mm-border)",
@@ -84,13 +98,14 @@ function Cell({
       <div
         className={`${size} flex items-center justify-center rounded-sm select-none`}
         style={{
+          ...mobileCellSize,
           background: "var(--mm-cell-open-bg)",
           boxShadow: "var(--cell-open-shadow)",
           border: "1px solid var(--mm-border)",
           color: NUMBER_COLORS[cell.neighborMines] || "#EDE8DE",
-          fontSize: mobileCompact ? "11px" : "13px",
+          fontSize: mobileCompact ? "clamp(7px, calc(var(--mm-mobile-cell-size) * 0.46), 11px)" : "13px",
           fontWeight: 700,
-          letterSpacing: "-0.02em",
+          letterSpacing: 0,
         }}
       >
         {cell.neighborMines}
@@ -103,6 +118,7 @@ function Cell({
       <button
         className={`${size} flex items-center justify-center rounded-sm select-none cursor-pointer transition-transform active:scale-95`}
         style={{
+          ...mobileCellSize,
           background: "var(--mm-cell-flag-bg)",
           boxShadow: "var(--cell-closed-shadow), 0 0 8px var(--mm-amber-glow)",
           border: "1px solid var(--mm-border-amber)",
@@ -110,7 +126,7 @@ function Cell({
         onClick={handleClick}
         onContextMenu={handleRightClick}
       >
-        <RacingFlagIcon size={mobileCompact ? 13 : 15} color="var(--mm-amber)" />
+        <RacingFlagIcon size={mobileCompact ? "calc(var(--mm-mobile-cell-size) * 0.54)" : 15} color="var(--mm-amber)" />
       </button>
     );
   }
@@ -135,6 +151,7 @@ function Cell({
     <button
       className={`${size} rounded-sm select-none cursor-pointer transition-all duration-150 hover:brightness-110 active:scale-95`}
       style={{
+        ...mobileCellSize,
         background: closedBg,
         boxShadow: closedShadow + (glowEffect ? `, ${glowEffect}` : ""),
         border: closedBorder,
@@ -145,11 +162,19 @@ function Cell({
   );
 }
 
-export function MinesweeperBoard({ board, status, onReveal, onFlag, highlightedCells, safeCells, mobileCompact }: Props) {
+export function MinesweeperBoard({ board, status, onReveal, onFlag, highlightedCells, safeCells, mobileCompact, flagsEnabled = true }: Props) {
+  const compactBoardVars = mobileCompact
+    ? ({
+        "--mm-board-cols": board[0]?.length || 9,
+        "--mm-mobile-cell-size": "min(32px, calc((100dvw - 72px - ((var(--mm-board-cols) - 1) * 2px)) / var(--mm-board-cols)))",
+      } as CSSProperties)
+    : undefined;
+
   return (
     <div
       className="inline-block p-3 rounded-xl"
       style={{
+        ...compactBoardVars,
         background: "var(--mm-board-bg)",
         border: "1px solid var(--mm-border-2)",
         boxShadow: "var(--mm-board-shadow)",
@@ -157,7 +182,12 @@ export function MinesweeperBoard({ board, status, onReveal, onFlag, highlightedC
     >
       <div
         className="grid"
-        style={{ gap: mobileCompact ? "2px" : "3px", gridTemplateColumns: `repeat(${board[0]?.length || 9}, 1fr)` }}
+        style={{
+          gap: mobileCompact ? "2px" : "3px",
+          gridTemplateColumns: mobileCompact
+            ? `repeat(${board[0]?.length || 9}, var(--mm-mobile-cell-size))`
+            : `repeat(${board[0]?.length || 9}, 1fr)`,
+        }}
       >
         {board.map((row, rIdx) =>
           row.map((cell, cIdx) => (
@@ -172,6 +202,7 @@ export function MinesweeperBoard({ board, status, onReveal, onFlag, highlightedC
               isHighlighted={highlightedCells?.has(`${rIdx},${cIdx}`)}
               isSafe={safeCells?.has(`${rIdx},${cIdx}`)}
               mobileCompact={mobileCompact}
+              flagsEnabled={flagsEnabled}
             />
           ))
         )}
