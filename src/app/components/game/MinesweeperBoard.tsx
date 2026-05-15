@@ -75,7 +75,9 @@ function Cell({
             border: "1px solid rgba(229,90,90,0.3)",
           }}
         >
-          <BombIcon size={mobileCompact ? "calc(var(--mm-mobile-cell-size) * 0.58)" : 16} color="var(--mm-red)" />
+          {mobileCompact
+            ? <span style={{ width: "calc(var(--mm-mobile-cell-size) * 0.58)", height: "calc(var(--mm-mobile-cell-size) * 0.58)", display: "flex" }}><BombIcon size="100%" color="var(--mm-red)" /></span>
+            : <BombIcon size={16} color="var(--mm-red)" />}
         </div>
       );
     }
@@ -126,7 +128,9 @@ function Cell({
         onClick={handleClick}
         onContextMenu={handleRightClick}
       >
-        <RacingFlagIcon size={mobileCompact ? "calc(var(--mm-mobile-cell-size) * 0.54)" : 15} color="var(--mm-amber)" />
+        {mobileCompact
+          ? <span style={{ width: "calc(var(--mm-mobile-cell-size) * 0.54)", height: "calc(var(--mm-mobile-cell-size) * 0.54)", display: "flex" }}><RacingFlagIcon size="100%" color="var(--mm-amber)" /></span>
+          : <RacingFlagIcon size={15} color="var(--mm-amber)" />}
       </button>
     );
   }
