@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useForm, type UseFormRegisterReturn } from "react-hook-form";
 import { EyeIcon, FlashIcon, BrainIcon, CrownIcon, ChartUpIcon } from "hugeicons-react";
 import { Hexagon } from "lucide-react";
+import { supabase } from "../../lib/supabase";
 
 type Props = {
   onLogin: () => void;
@@ -97,15 +98,23 @@ function StyledInput({
 export function LoginPage({ onLogin, onGoRegister }: Props) {
   const [showPass, setShowPass] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>();
 
-  const onSubmit = () => {
+  const onSubmit = async (data: FormData) => {
     setIsLoading(true);
-    window.setTimeout(() => {
-      setIsLoading(false);
-      onLogin();
-    }, 500);
+    setAuthError(null);
+    const { error } = await supabase.auth.signInWithPassword({
+      email: data.email,
+      password: data.password,
+    });
+    setIsLoading(false);
+    if (error) {
+      setAuthError(error.message);
+      return;
+    }
+    onLogin();
   };
 
   return (
@@ -234,6 +243,12 @@ export function LoginPage({ onLogin, onGoRegister }: Props) {
                 Forgot password?
               </button>
             </div>
+
+            {authError && (
+              <p style={{ color: "var(--mm-red)", fontSize: "13px", textAlign: "center" }}>
+                {authError}
+              </p>
+            )}
 
             <button
               type="submit"
