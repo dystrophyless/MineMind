@@ -7,6 +7,21 @@ type RankedMode = "classic" | "timed" | "noFlags";
 type Period = "allTime" | "monthly" | "weekly";
 type Scope = "global" | "city";
 
+type AttemptRow = {
+  user_id: string;
+  mode: RankedMode;
+  status: string;
+  time_seconds: number | null;
+  mines_found: number | null;
+  created_at: string;
+};
+
+type ProfileRow = {
+  user_id: string;
+  username: string | null;
+  city: string | null;
+};
+
 export type LeaderboardRow = {
   playerId: string;
   player: string;
@@ -31,7 +46,10 @@ export function useLeaderboard(mode: RankedMode, period: Period, scope: Scope) {
   const [userCity, setUserCity] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setUserCity(null);
+      return;
+    }
     supabase
       .from("user_profiles")
       .select("city")
@@ -42,20 +60,40 @@ export function useLeaderboard(mode: RankedMode, period: Period, scope: Scope) {
 
   useEffect(() => {
     setIsLoading(true);
+    let cancelled = false;
 
     async function load() {
-      const { data } = await supabase
+      const { data: attemptsData, error: attemptsError } = await supabase
         .from("game_attempts")
-        .select("user_id, mode, status, time_seconds, mines_found, created_at, user_profiles(username, city)")
+        .select("user_id, mode, status, time_seconds, mines_found, created_at")
         .eq("mode", mode)
         .eq("status", "won")
         .gte("created_at", periodStart(period));
 
-      if (!data) { setIsLoading(false); return; }
+      if (cancelled) return;
+      if (attemptsError || !attemptsData) {
+        setRows([]);
+        setIsLoading(false);
+        return;
+      }
 
-      type Row = typeof data[0];
-      const bestByPlayer = new Map<string, Row>();
-      for (const row of data) {
+      const attempts = attemptsData as AttemptRow[];
+      const userIds = [...new Set(attempts.map((row) => row.user_id))];
+      let profiles: ProfileRow[] = [];
+
+      if (userIds.length > 0) {
+        const { data: profilesData } = await supabase
+          .from("user_profiles")
+          .select("user_id, username, city")
+          .in("user_id", userIds);
+
+        if (cancelled) return;
+        profiles = (profilesData ?? []) as ProfileRow[];
+      }
+
+      const profilesByUserId = new Map(profiles.map((profile) => [profile.user_id, profile]));
+      const bestByPlayer = new Map<string, AttemptRow>();
+      for (const row of attempts) {
         const current = bestByPlayer.get(row.user_id);
         const isBetter = !current ||
           (mode === "timed"
@@ -66,10 +104,10 @@ export function useLeaderboard(mode: RankedMode, period: Period, scope: Scope) {
 
       let entries = Array.from(bestByPlayer.values());
 
-      if (scope === "city" && userCity) {
-        entries = entries.filter(e =>
-          (e.user_profiles as { city: string | null } | null)?.city === userCity
-        );
+      if (scope === "city") {
+        entries = userCity
+          ? entries.filter((entry) => profilesByUserId.get(entry.user_id)?.city === userCity)
+          : [];
       }
 
       entries.sort((a, b) =>
@@ -79,7 +117,7 @@ export function useLeaderboard(mode: RankedMode, period: Period, scope: Scope) {
       );
 
       const leaderboardRows: LeaderboardRow[] = entries.map((e, i) => {
-        const profile = e.user_profiles as { username: string; city: string | null } | null;
+        const profile = profilesByUserId.get(e.user_id);
         const score = mode === "timed" ? (e.mines_found ?? 0) : (e.time_seconds ?? 0);
         return {
           playerId: e.user_id,
@@ -96,7 +134,16 @@ export function useLeaderboard(mode: RankedMode, period: Period, scope: Scope) {
       setIsLoading(false);
     }
 
-    load();
+    load().catch(() => {
+      if (!cancelled) {
+        setRows([]);
+        setIsLoading(false);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [mode, period, scope, user, userCity]);
 
   return { rows, isLoading };

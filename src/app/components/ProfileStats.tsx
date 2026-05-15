@@ -1,9 +1,33 @@
-import { BrainIcon, StarIcon, StopWatchIcon, FireIcon, ChartUpIcon, CrownIcon, BombIcon, FlashIcon } from "hugeicons-react";
-import { useT } from "../i18n/LocaleProvider";
+import { StopWatchIcon, FireIcon, ChartUpIcon, CrownIcon, BombIcon, FlashIcon } from "hugeicons-react";
+import { Hexagon, LogOutIcon } from "lucide-react";
+import { useT, useLocale } from "../i18n/LocaleProvider";
 import type { ReactNode } from "react";
 import type { TranslationKey } from "../i18n/translations";
 import { useProfileStats } from "../hooks/useProfileStats";
 import { SettingsControls } from "./SettingsControls";
+import { CITY_COUNTRY_MAP } from "../data/cities";
+import { useAuth } from "../contexts/AuthContext";
+
+const BADGE_META: Record<string, { name: TranslationKey; desc: TranslationKey; icon: ReactNode }> = {
+  speed:  { name: "profileBadgeSpeed",  desc: "profileBadgeSpeedDesc",  icon: <FlashIcon     size={24} color="var(--mm-amber)" /> },
+  streak: { name: "profileBadgeStreak", desc: "profileBadgeStreakDesc", icon: <FireIcon      size={24} color="var(--mm-amber)" /> },
+  daily:  { name: "profileBadgeDaily",  desc: "profileBadgeDailyDesc",  icon: <StopWatchIcon size={24} color="var(--mm-amber)" /> },
+};
+
+const RU_MEMBER_MONTHS = [
+  "января",
+  "февраля",
+  "марта",
+  "апреля",
+  "мая",
+  "июня",
+  "июля",
+  "августа",
+  "сентября",
+  "октября",
+  "ноября",
+  "декабря",
+];
 
 type RecentGameResult = "won" | "lost";
 
@@ -33,8 +57,25 @@ function ProfileRankBadge({ children, icon, tone }: { children: ReactNode; icon?
   );
 }
 
+function CityWithCode({ city }: { city: string }) {
+  const cityCode = CITY_COUNTRY_MAP[city];
+
+  return (
+    <>
+      {city}
+      {cityCode && (
+        <sup style={{ color: "var(--mm-text-3)", fontSize: "9px", fontWeight: 800, marginLeft: "2px" }}>
+          {cityCode}
+        </sup>
+      )}
+    </>
+  );
+}
+
 export function ProfileStats() {
   const t = useT();
+  const { locale } = useLocale();
+  const { signOut } = useAuth();
   const { data: profileData, isLoading } = useProfileStats();
 
   const formatTime = (s: number) =>
@@ -47,39 +88,53 @@ export function ProfileStats() {
     daily: "mobileModeDaily",
   };
 
-  const badgeKeyMap: { name: TranslationKey; desc: TranslationKey }[] = [
-    { name: "profileBadgeSpeed", desc: "profileBadgeSpeedDesc" },
-    { name: "profileBadgeFlawless", desc: "profileBadgeFlawlessDesc" },
-    { name: "profileBadgeStreak", desc: "profileBadgeStreakDesc" },
-    { name: "profileBadgeDaily", desc: "profileBadgeDailyDesc" },
-    { name: "profileBadgeGrandmaster", desc: "profileBadgeGrandmasterDesc" },
-    { name: "profileBadgeScholar", desc: "profileBadgeScholarDesc" },
-  ];
-
   if (isLoading) return <div style={{ padding: "64px", textAlign: "center", color: "var(--mm-text-3)" }}>{t("loading")}</div>;
   if (!profileData) return null;
 
-  const stats = [
-    { label: t("landingWinRate"), value: `${profileData.winRate}%`, icon: <ChartUpIcon size={16} color="var(--mm-green)" />, color: "var(--mm-green)", change: t("profileThisWeek") },
-    { label: t("profileGamesPlayed"), value: profileData.gamesPlayed.toLocaleString(), icon: <BrainIcon size={16} color="var(--mm-blue)" />, color: "var(--mm-blue)", change: t("profileToday") },
+  const memberSinceText = (() => {
+    const date = new Date(profileData.memberSince);
+    const dateStr = locale === "ru"
+      ? `${RU_MEMBER_MONTHS[date.getMonth()]} ${date.getFullYear()}`
+      : date.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+    return locale === "ru" ? `Участник с ${dateStr}` : `Member since ${dateStr}`;
+  })();
+
+  const levelTitleKey = (() => {
+    const xp = profileData.xp;
+    if (xp < 500)   return "levelBeginner";
+    if (xp < 1500)  return "levelExplorer";
+    if (xp < 3000)  return "levelTactician";
+    if (xp < 5000)  return "levelStrategist";
+    if (xp < 8000)  return "levelExpert";
+    if (xp < 12000) return "levelMaster";
+    return "levelGrandmaster";
+  })() as Parameters<typeof t>[0];
+
+  const winRateChange = profileData.winRateChangeThisWeek;
+  const winRateChangeText = winRateChange !== null
+    ? `${winRateChange >= 0 ? "+" : ""}${winRateChange}% ${t("profileThisWeek")}`
+    : "—";
+
+  const mainStats = [
+    { label: t("landingWinRate"), value: `${profileData.winRate}%`, icon: <ChartUpIcon size={16} color="var(--mm-green)" />, color: "var(--mm-green)", change: winRateChangeText },
+    { label: t("profileGamesPlayed"), value: profileData.gamesPlayed.toLocaleString(), icon: <ChartUpIcon size={16} color="var(--mm-blue)" />, color: "var(--mm-blue)", change: `+${profileData.gamesToday} ${t("profileToday")}` },
     { label: t("landingBestTime"), value: profileData.bestTimeSeconds ? formatTime(profileData.bestTimeSeconds) : "—", icon: <StopWatchIcon size={16} color="var(--mm-amber)" />, color: "var(--mm-amber)", change: t("mobileModeClassic") },
-    { label: t("profileFavMode"), value: t(modeKeyMap[profileData.favoriteMode] ?? "mobileModeClassic"), icon: <BombIcon size={16} color="var(--mm-purple)" />, color: "var(--mm-purple)", change: t("profileOfGames") },
-    { label: t("profileCurrentStreak"), value: profileData.currentStreak.toString(), icon: <FireIcon size={16} color="var(--mm-red)" />, color: "var(--mm-red)", change: t("profilePersonalBest") },
+    { label: t("profileCurrentStreak"), value: profileData.currentStreak.toString(), icon: <FireIcon size={16} color="var(--mm-red)" />, color: "var(--mm-red)", change: `${t("profilePersonalBest")} ${profileData.bestStreak}` },
   ];
 
-  const badges: { name: TranslationKey; desc: TranslationKey; icon: ReactNode; unlocked: boolean }[] = badgeKeyMap.map((b, i) => ({
-    name: b.name,
-    desc: b.desc,
-    icon: [
-      <FlashIcon size={24} color="var(--mm-amber)" />,
-      <StarIcon size={24} color="var(--mm-amber)" />,
-      <FireIcon size={24} color="var(--mm-amber)" />,
-      <StopWatchIcon size={24} color="var(--mm-amber)" />,
-      <CrownIcon size={24} color="var(--mm-amber)" />,
-      <BrainIcon size={24} color="var(--mm-amber)" />,
-    ][i],
-    unlocked: profileData.badges[i]?.unlocked ?? false,
-  }));
+  const favMode = {
+    label: t("profileFavMode"),
+    value: t(modeKeyMap[profileData.favoriteMode] ?? "mobileModeClassic"),
+    icon: <BombIcon size={16} color="var(--mm-purple)" />,
+    color: "var(--mm-purple)",
+    change: `${profileData.favModePercentage}% ${t("profileOfGames")}`,
+  };
+
+  const badges = profileData.badges.flatMap(b => {
+    const meta = BADGE_META[b.key];
+    return meta ? [{ key: b.key, unlocked: b.unlocked, ...meta }] : [];
+  });
+  const unlockedBadges = badges.filter((badge) => badge.unlocked).length;
 
   const recentGames: { mode: string; time: string; result: RecentGameResult; date: string }[] = profileData.recentGames.map(g => ({
     mode: t(modeKeyMap[g.mode] ?? "mobileModeClassic"),
@@ -87,13 +142,29 @@ export function ProfileStats() {
       ? `${g.minesFound ?? 0} ${t("boardMines")}`
       : g.timeSeconds ? formatTime(g.timeSeconds) : "—",
     result: g.status,
-    date: new Date(g.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+    date: new Date(g.createdAt).toLocaleDateString(locale === "ru" ? "ru-RU" : "en-US", { month: "short", day: "numeric" }),
   }));
 
   return (
     <div className="min-h-screen" style={{ background: "var(--mm-bg)" }}>
       <div className="max-w-5xl mx-auto px-4 py-8">
-        <div className="flex justify-end mb-3 md:hidden">
+        <div className="flex items-center justify-between mb-3 md:hidden">
+          <div className="flex items-center gap-2">
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+              style={{
+                background: "var(--mm-brand-mark-bg)",
+                border: "1px solid var(--mm-brand-mark-border)",
+                color: "var(--mm-brand-mark-color)",
+                boxShadow: "var(--mm-brand-mark-shadow)",
+              }}
+            >
+              <Hexagon size={15} strokeWidth={2.1} />
+            </div>
+            <span style={{ color: "var(--mm-text)", fontSize: "16px", fontWeight: 700 }}>
+              Mine<span style={{ color: "var(--mm-brand-text-accent)" }}>Mind</span>
+            </span>
+          </div>
           <SettingsControls compact />
         </div>
 
@@ -102,36 +173,68 @@ export function ProfileStats() {
             <span style={{ color: "var(--mm-action-fg)", fontSize: "32px", fontWeight: 800 }}>{profileData.avatarInitial}</span>
           </div>
 
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1 flex-wrap">
               <h1 style={{ color: "var(--mm-text)", fontSize: "24px", fontWeight: 800 }}>{profileData.username}</h1>
-              <ProfileRankBadge tone="global" icon={<CrownIcon size={12} color="currentColor" />}>
-                — {t("leaderboardGlobal")}
-              </ProfileRankBadge>
-              <ProfileRankBadge tone="city">— {profileData.city ? `${t("profileCityIn")} ${profileData.city}` : "—"}</ProfileRankBadge>
+              {profileData.gamesPlayed > 0 && profileData.globalRank != null && (
+                <ProfileRankBadge tone="global" icon={<CrownIcon size={12} color="currentColor" />}>
+                  #{profileData.globalRank} {t("leaderboardGlobal")}
+                </ProfileRankBadge>
+              )}
+              {profileData.gamesPlayed > 0 && profileData.cityRank != null && profileData.city && (
+                <ProfileRankBadge tone="city">#{profileData.cityRank} {t("profileCityIn")} <CityWithCode city={profileData.city} /></ProfileRankBadge>
+              )}
             </div>
-            <p style={{ color: "var(--mm-text-2)", fontSize: "13px", marginBottom: "12px" }}>{t("profileMemberSince")}</p>
+            <p style={{ color: "var(--mm-text-2)", fontSize: "13px", marginBottom: "12px" }}>{memberSinceText}</p>
             <div>
               <div className="flex justify-between mb-1.5">
-                <span style={{ color: "var(--mm-text-3)", fontSize: "11px" }}>{t("profileLevel")}</span>
+                <span style={{ color: "var(--mm-text-3)", fontSize: "11px" }}>{t("profileLevel")} {profileData.level} — {t(levelTitleKey)}</span>
                 <span style={{ color: "var(--mm-amber)", fontSize: "11px" }}>{`${profileData.xp.toLocaleString()} / 10,000 XP`}</span>
               </div>
               <ProgressBar value={profileData.xp} max={10000} color="var(--mm-amber)" />
             </div>
           </div>
+
+          <button
+            type="button"
+            onClick={signOut}
+            aria-label={t("profileSignOut")}
+            className="h-10 rounded-xl px-3.5 flex items-center gap-2 shrink-0 transition-colors duration-200 hover:brightness-110"
+            style={{
+              background: "var(--mm-surface-2)",
+              border: "1px solid var(--mm-border-2)",
+              color: "var(--mm-red)",
+              fontSize: "13px",
+              fontWeight: 800,
+              fontFamily: "var(--font-mabry)",
+            }}
+          >
+            <LogOutIcon size={15} strokeWidth={2.4} />
+            <span>{t("profileSignOut")}</span>
+          </button>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
-          {stats.map(s => (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+          {mainStats.map(s => (
             <div key={s.label} className="rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-1px]" style={{ background: "var(--mm-surface-1)", border: "1px solid var(--mm-border)" }}>
               <div className="flex items-center gap-2 mb-2">
                 {s.icon}
                 <span style={{ color: "var(--mm-text-3)", fontSize: "11px", textTransform: "uppercase" }}>{s.label}</span>
               </div>
-              <p style={{ color: s.color, fontSize: "26px", fontWeight: 800, marginBottom: "4px" }}>{s.value}</p>
+              <p style={{ color: s.color, fontSize: "26px", fontWeight: 800, marginBottom: "4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.value}</p>
               <p style={{ color: "var(--mm-text-3)", fontSize: "11px" }}>{s.change}</p>
             </div>
           ))}
+          <div className="col-span-2 lg:col-span-4 rounded-2xl p-5 flex items-center gap-6 transition-all duration-200 hover:translate-y-[-1px]" style={{ background: "var(--mm-surface-1)", border: "1px solid var(--mm-border)" }}>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-2">
+                {favMode.icon}
+                <span style={{ color: "var(--mm-text-3)", fontSize: "11px", textTransform: "uppercase" }}>{favMode.label}</span>
+              </div>
+              <p style={{ color: favMode.color, fontSize: "26px", fontWeight: 800, marginBottom: "4px" }}>{favMode.value}</p>
+              <p style={{ color: "var(--mm-text-3)", fontSize: "11px" }}>{favMode.change}</p>
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
@@ -181,11 +284,11 @@ export function ProfileStats() {
         <div className="rounded-2xl p-5" style={{ background: "var(--mm-surface-1)", border: "1px solid var(--mm-border)" }}>
           <div className="flex items-center justify-between mb-4">
             <p style={{ color: "var(--mm-text)", fontSize: "14px", fontWeight: 700 }}>{t("profileAchievements")}</p>
-            <span style={{ color: "var(--mm-text-3)", fontSize: "12px" }}>{t("profileUnlocked")}</span>
+            <span style={{ color: "var(--mm-text-3)", fontSize: "12px" }}>{unlockedBadges} / {badges.length} {t("profileUnlocked")}</span>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             {badges.map(b => (
-              <div key={b.name} className="rounded-xl p-4 text-center flex flex-col items-center gap-2" style={{ background: b.unlocked ? "var(--mm-surface-2)" : "var(--mm-surface-1)", border: `1px solid ${b.unlocked ? "var(--mm-border-2)" : "var(--mm-border)"}`, opacity: b.unlocked ? 1 : 0.4, filter: b.unlocked ? "none" : "grayscale(1)" }}>
+              <div key={b.key} className="rounded-xl p-4 text-center flex flex-col items-center gap-2" style={{ background: b.unlocked ? "var(--mm-surface-2)" : "var(--mm-surface-1)", border: `1px solid ${b.unlocked ? "var(--mm-border-2)" : "var(--mm-border)"}`, opacity: b.unlocked ? 1 : 0.4, filter: b.unlocked ? "none" : "grayscale(1)" }}>
                 <span className="h-6 flex items-center justify-center">{b.icon}</span>
                 <div>
                   <p style={{ color: "var(--mm-text)", fontSize: "11px", fontWeight: 600 }}>{t(b.name)}</p>

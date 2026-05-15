@@ -1,10 +1,12 @@
-import { BrainIcon, FlashIcon, CrownIcon, StarIcon, ArrowRightBigIcon, ChartUpIcon } from "hugeicons-react";
+import { FlashIcon, CrownIcon, ArrowRightBigIcon, ChartUpIcon, GameController01Icon } from "hugeicons-react";
 import { useT } from "../i18n/LocaleProvider";
 import { useThemeMode } from "../theme/ThemeProvider";
+import { useLandingStats } from "../hooks/useLandingStats";
+import { useProfileStats } from "../hooks/useProfileStats";
 
 type Props = {
   onPlay: () => void;
-  onDaily: () => void;
+  onPlayDaily: () => void;
 };
 
 const LANDING_BRAIN_IMAGES = {
@@ -38,19 +40,36 @@ function LandingBrainImage() {
   );
 }
 
-export function LandingPage({ onPlay, onDaily }: Props) {
+function formatCount(value: number | null | undefined) {
+  if (value === null || value === undefined) return "-";
+  return value.toLocaleString();
+}
+
+function formatTime(seconds: number | null | undefined) {
+  if (!seconds) return "-";
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+}
+
+export function LandingPage({ onPlay, onPlayDaily }: Props) {
   const t = useT();
+  const { data: landingStats } = useLandingStats();
+  const { data: profileData } = useProfileStats();
   const features = [
-    { icon: <BrainIcon size={20} color="var(--mm-amber)" />, title: t("landingAiCoachTitle"), desc: t("landingAiCoachDesc") },
     { icon: <FlashIcon size={20} color="var(--mm-blue)" />, title: t("landingDailyTitle"), desc: t("landingDailyDesc") },
     { icon: <CrownIcon size={20} color="var(--mm-purple)" />, title: t("landingLeaderboardsTitle"), desc: t("landingLeaderboardsDesc") },
+    { icon: <GameController01Icon size={20} color="var(--mm-amber)" />, title: t("landingModesTitle"), desc: t("landingModesDesc") },
     { icon: <ChartUpIcon size={20} color="var(--mm-green)" />, title: t("landingStatsTitle"), desc: t("landingStatsDesc") },
   ];
   const stats = [
-    { value: "2.4M+", label: t("landingGamesPlayed") },
-    { value: "98K", label: t("landingActivePlayers") },
-    { value: "99.8%", label: t("landingUptime") },
-    { value: "#1", label: t("landingStrategyMinesweeper") },
+    { key: "totalGames", value: formatCount(landingStats?.totalGames), label: t("landingGamesPlayed") },
+    { key: "activePlayers", value: formatCount(landingStats?.activePlayers), label: t("landingActivePlayers") },
+    { key: "totalWins", value: formatCount(landingStats?.totalWins), label: t("landingGamesWon") },
+    { key: "winRate", value: landingStats ? `${landingStats.winRate}%` : "-", label: t("landingWinRate") },
+  ];
+  const dashboardStats = [
+    { value: profileData ? `${profileData?.winRate}%` : "-", label: t("landingWinRate") },
+    { value: profileData ? formatTime(profileData.bestTimeSeconds) : "-", label: t("landingBestTime") },
+    { value: profileData ? profileData.currentStreak.toString() : "-", label: t("controlsStreak") },
   ];
 
   return (
@@ -78,7 +97,7 @@ export function LandingPage({ onPlay, onDaily }: Props) {
                 {t("navPlayNow")}
                 <ArrowRightBigIcon size={16} color="var(--mm-action-fg)" />
               </button>
-              <button onClick={onDaily} className="flex items-center justify-center gap-2 px-8 py-4 rounded-xl transition-all duration-200 hover:brightness-110 active:scale-95" style={{ background: "var(--mm-surface-2)", color: "var(--mm-text)", fontSize: "15px", fontWeight: 600, fontFamily: "var(--font-mabry)", border: "1px solid var(--mm-border-2)" }}>
+              <button onClick={onPlayDaily} className="flex items-center justify-center gap-2 px-8 py-4 rounded-xl transition-all duration-200 hover:brightness-110 active:scale-95" style={{ background: "var(--mm-surface-2)", color: "var(--mm-text)", fontSize: "15px", fontWeight: 600, fontFamily: "var(--font-mabry)", border: "1px solid var(--mm-border-2)" }}>
                 <FlashIcon size={16} color="var(--mm-amber)" />
                 {t("landingTryDaily")}
               </button>
@@ -91,7 +110,7 @@ export function LandingPage({ onPlay, onDaily }: Props) {
                 ))}
               </div>
               <span style={{ color: "var(--mm-text-2)", fontSize: "13px" }}>
-                <strong style={{ color: "var(--mm-text)" }}>98,000+</strong> {t("landingPlayers")}
+                <strong style={{ color: "var(--mm-text)" }}>{formatCount(landingStats?.activePlayers)}</strong> {t("landingPlayers")}
               </span>
             </div>
           </div>
@@ -102,16 +121,25 @@ export function LandingPage({ onPlay, onDaily }: Props) {
             <div className="w-full rounded-2xl p-4" style={{ background: "var(--mm-surface-1)", border: "1px solid var(--mm-border)" }}>
               <div className="flex items-center justify-between mb-3">
                 <span style={{ color: "var(--mm-text)", fontSize: "13px", fontWeight: 600 }}>{t("landingDashboard")}</span>
-                <span style={{ color: "var(--mm-amber)", fontSize: "11px" }}>{t("landingRank")}</span>
+                <button
+                  onClick={onPlay}
+                  className="flex items-center gap-1 rounded-lg px-2.5 py-1 transition-all duration-200 hover:brightness-110 active:scale-95"
+                  style={{ background: "var(--mm-action-bg)", color: "var(--mm-action-fg)", fontSize: "11px", fontWeight: 700, fontFamily: "var(--font-mabry)" }}
+                >
+                  {t("navSignIn")} →
+                </button>
               </div>
-              <div className="grid grid-cols-3 gap-2">
-                {[["82%", t("landingWinRate")], ["1:24", t("landingBestTime")], ["7", t("landingStreak")]].map(([v, l], i) => (
-                  <div key={i} className="rounded-lg p-2 text-center" style={{ background: "var(--mm-surface-2)" }}>
-                    <div style={{ color: "var(--mm-text)", fontSize: "16px", fontWeight: 700 }}>{v}</div>
-                    <div style={{ color: "var(--mm-text-3)", fontSize: "10px" }}>{l}</div>
+              <div className="grid grid-cols-3 gap-2 mb-2">
+                {dashboardStats.map((stat) => (
+                  <div key={stat.label} className="rounded-lg p-2 text-center" style={{ background: "var(--mm-surface-2)" }}>
+                    <div style={{ color: profileData ? "var(--mm-text)" : "var(--mm-text-3)", fontSize: "16px", fontWeight: 700 }}>{stat.value}</div>
+                    <div style={{ color: "var(--mm-text-3)", fontSize: "10px" }}>{stat.label}</div>
                   </div>
                 ))}
               </div>
+              <p style={{ color: "var(--mm-text-3)", fontSize: "11px", textAlign: "center" }}>
+                {profileData ? t("landingProfileStatsSynced") : t("landingSignInForStats")}
+              </p>
             </div>
           </div>
         </div>
@@ -120,7 +148,7 @@ export function LandingPage({ onPlay, onDaily }: Props) {
       <div id="landing-stats" style={{ borderTop: "1px solid var(--mm-border)", borderBottom: "1px solid var(--mm-border)" }}>
         <div className="max-w-7xl mx-auto px-6 py-5 grid grid-cols-2 md:grid-cols-4 gap-4">
           {stats.map(s => (
-            <div key={s.value} className="text-center">
+            <div key={s.key} className="text-center">
               <div style={{ color: "var(--mm-amber)", fontSize: "24px", fontWeight: 800 }}>{s.value}</div>
               <div style={{ color: "var(--mm-text-3)", fontSize: "12px" }}>{s.label}</div>
             </div>
