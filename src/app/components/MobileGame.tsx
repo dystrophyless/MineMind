@@ -89,12 +89,12 @@ export function MobileGame() {
           <p style={{ color: "var(--mm-text)", fontSize: "16px", fontWeight: 700, marginBottom: "16px" }}>{t("mobileControls")}</p>
           <div className="grid grid-cols-2 gap-2 mb-4">
             {(["beginner", "intermediate", "expert", "daily"] as Difficulty[]).map(d => (
-              <button key={d} onClick={() => { setDifficulty(d); resetGame(); setSheet(null); }} className="rounded-xl py-3 transition-all" style={{ background: difficulty === d ? "var(--mm-selected-bg)" : "var(--mm-surface-3)", color: difficulty === d ? "var(--mm-selected-fg)" : "var(--mm-text-2)", fontSize: "13px", fontWeight: 700, fontFamily: "var(--font-mabry)", border: `1px solid ${difficulty === d ? "var(--mm-selected-border)" : "var(--mm-border)"}`, boxShadow: difficulty === d ? "var(--mm-selected-shadow)" : "none" }}>
+              <button key={d} onClick={() => { setDifficulty(d); resetGame(); setSheet(null); }} className="rounded-xl py-3 transition-all" style={{ background: difficulty === d ? "var(--mm-selected-bg)" : "var(--mm-surface-3)", color: difficulty === d ? "var(--mm-selected-fg)" : "var(--mm-text-2)", fontSize: "13px", fontWeight: 700, fontFamily: "var(--font-mabry)", border: `1px solid ${difficulty === d ? "var(--mm-selected-border)" : "var(--mm-border)"}` }}>
                 {difficultyLabels[d]}
               </button>
             ))}
           </div>
-          <button onClick={() => { resetGame(); setSheet(null); }} className="w-full rounded-xl py-3.5 flex items-center justify-center gap-2" style={{ background: "var(--mm-action-bg)", color: "var(--mm-action-fg)", fontSize: "14px", fontWeight: 700, fontFamily: "var(--font-mabry)", boxShadow: "var(--mm-action-shadow)" }}>
+          <button onClick={() => { resetGame(); setSheet(null); }} className="w-full rounded-xl py-3.5 flex items-center justify-center gap-2" style={{ background: "var(--mm-action-bg)", color: "var(--mm-action-fg)", fontSize: "14px", fontWeight: 700, fontFamily: "var(--font-mabry)" }}>
             <ArrowReloadHorizontalIcon size={16} color="var(--mm-action-fg)" />
             {t("controlsNewGame")}
           </button>
