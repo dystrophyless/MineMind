@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { supabase } from "../../lib/supabase";
+import { useAuth } from "../contexts/AuthContext";
 import { FlashIcon, CrownIcon, BrainIcon } from "hugeicons-react";
 import { MinesweeperBoard } from "./game/MinesweeperBoard";
 import { ControlPanel } from "./game/ControlPanel";
@@ -15,6 +17,8 @@ type Props = {
 
 export function GameDashboard({ onNavigate }: Props) {
   const t = useT();
+  const { user } = useAuth();
+  const savedRef = useRef(false);
   const [mode, setMode] = useState<GameMode>("classic");
   const [timedSecondsLeft, setTimedSecondsLeft] = useState(TIMED_MODE_INITIAL_SECONDS);
   const [timedMinesFound, setTimedMinesFound] = useState(0);
@@ -82,6 +86,35 @@ export function GameDashboard({ onNavigate }: Props) {
       setTimedBest(best => Math.max(best, timedMinesFound));
     }
   }, [mode, status, timedMinesFound]);
+
+  useEffect(() => {
+    if (status === "idle" || status === "playing") {
+      savedRef.current = false;
+      return;
+    }
+    if (savedRef.current || !user) return;
+
+    // Skip saving individual boards in timed mode — only save when the run ends (status === "lost")
+    if (mode === "timed" && status === "won") return;
+    // Skip daily — handled separately
+    if (mode === "daily") return;
+
+    savedRef.current = true;
+
+    const attempt = {
+      user_id: user.id,
+      mode,
+      difficulty: "beginner",
+      status,
+      ...(mode === "timed"
+        ? { mines_found: timedMinesFound }
+        : { time_seconds: time }),
+    };
+
+    supabase.from("game_attempts").insert(attempt).then(({ error }) => {
+      if (error) console.error("Failed to save game attempt:", error.message);
+    });
+  }, [status, mode, user, time, timedMinesFound]);
 
   return (
     <div className="flex flex-col h-full overflow-hidden" style={{ background: "var(--mm-bg)" }}>

@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { supabase } from "../../lib/supabase";
+import { useAuth } from "../contexts/AuthContext";
 import { BombIcon, StopWatchIcon, ArrowReloadHorizontalIcon } from "hugeicons-react";
 import { ChevronDownIcon } from "lucide-react";
 import { MinesweeperBoard } from "./game/MinesweeperBoard";
@@ -17,6 +19,8 @@ const MOBILE_MODE_RATINGS: Record<MobileGameMode, number> = {
 
 export function MobileGame() {
   const t = useT();
+  const { user } = useAuth();
+  const savedRef = useRef(false);
   const [mode, setMode] = useState<MobileGameMode>("classic");
   const [modeMenuOpen, setModeMenuOpen] = useState(false);
   const [timedSecondsLeft, setTimedSecondsLeft] = useState(TIMED_MODE_INITIAL_SECONDS);
@@ -90,6 +94,35 @@ export function MobileGame() {
       setTimedBest(best => Math.max(best, timedMinesFound));
     }
   }, [mode, status, timedMinesFound]);
+
+  useEffect(() => {
+    if (status === "idle" || status === "playing") {
+      savedRef.current = false;
+      return;
+    }
+    if (savedRef.current || !user) return;
+
+    // Skip saving individual boards in timed mode — only save when the run ends (status === "lost")
+    if (mode === "timed" && status === "won") return;
+    // Skip daily — handled separately
+    if (mode === "daily") return;
+
+    savedRef.current = true;
+
+    const attempt = {
+      user_id: user.id,
+      mode,
+      difficulty: "beginner",
+      status,
+      ...(mode === "timed"
+        ? { mines_found: timedMinesFound }
+        : { time_seconds: time }),
+    };
+
+    supabase.from("game_attempts").insert(attempt).then(({ error }) => {
+      if (error) console.error("Failed to save game attempt:", error.message);
+    });
+  }, [status, mode, user, time, timedMinesFound]);
 
   return (
     <div className="relative flex min-h-[100dvh] flex-col select-none overflow-hidden" style={{ background: "var(--mm-bg)", maxWidth: "430px", margin: "0 auto" }}>
