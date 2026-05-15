@@ -1,27 +1,29 @@
 import GoogleIcon from "@mui/icons-material/Google";
 import { useEffect, useRef, useState, type ClipboardEvent, type ChangeEvent, type KeyboardEvent } from "react";
 import { useForm, type UseFormRegisterReturn } from "react-hook-form";
-import { EyeIcon, StarIcon } from "hugeicons-react";
+import { EyeIcon } from "hugeicons-react";
 import { Hexagon } from "lucide-react";
 import { supabase } from "../../lib/supabase";
+import { CityPicker } from "./CityPicker";
 
 type Props = {
   onRegister: () => void;
   onGoLogin: () => void;
 };
 
-type RegisterStep = "credentials" | "username" | "code";
+type RegisterStep = "credentials" | "code" | "username" | "city";
 
 type FormData = {
   email: string;
   password: string;
   username: string;
   code: string;
+  city: string;
 };
 
 const CODE_LENGTH = 6;
 
-function BrandMark() {
+export function BrandMark() {
   return (
     <div className="flex items-center gap-3">
       <div
@@ -41,7 +43,7 @@ function BrandMark() {
   );
 }
 
-function StyledInput({
+export function StyledInput({
   label,
   id,
   type = "text",
@@ -115,9 +117,12 @@ export function RegisterPage({ onRegister, onGoLogin }: Props) {
   const [codeDigits, setCodeDigits] = useState<string[]>(() => Array(CODE_LENGTH).fill(""));
   const [authError, setAuthError] = useState<string | null>(null);
   const [pendingEmail, setPendingEmail] = useState("");
+  const [verifiedUserId, setVerifiedUserId] = useState<string | null>(null);
   const codeInputRefs = useRef<Array<HTMLInputElement | null>>([]);
 
-  const { register, handleSubmit, getValues, setValue, clearErrors, formState: { errors } } = useForm<FormData>();
+  const { register, handleSubmit, getValues, setValue, clearErrors, watch, formState: { errors } } = useForm<FormData>({
+    defaultValues: { city: "" },
+  });
 
   useEffect(() => {
     if (step !== "code") {
@@ -192,45 +197,63 @@ export function RegisterPage({ onRegister, onGoLogin }: Props) {
       setIsLoading(false);
       if (error) { setAuthError(error.message); return; }
       setPendingEmail(data.email);
+      setStep("code");
+      return;
+    }
+
+    if (step === "code") {
+      setIsLoading(true);
+      const { data: verifyData, error: verifyError } = await supabase.auth.verifyOtp({
+        email: pendingEmail,
+        token: data.code,
+        type: "email",
+      });
+      setIsLoading(false);
+      if (verifyError) {
+        setAuthError(verifyError.message);
+        return;
+      }
+
+      const userId = verifyData.user?.id;
+      if (!userId) {
+        setAuthError("Could not confirm your account. Please try again.");
+        return;
+      }
+
+      setVerifiedUserId(userId);
       setStep("username");
       return;
     }
 
     if (step === "username") {
+      setStep("city");
+      return;
+    }
+
+    // step === "city"
+    const userId = verifiedUserId;
+    if (!userId) {
+      setAuthError("Could not finish registration. Please verify your email again.");
       setStep("code");
       return;
     }
 
-    // step === "code"
     setIsLoading(true);
-    const { data: verifyData, error: verifyError } = await supabase.auth.verifyOtp({
-      email: pendingEmail,
-      token: data.code,
-      type: "email",
-    });
-    if (verifyError) {
-      setIsLoading(false);
-      setAuthError(verifyError.message);
+    const { error: profileError } = await supabase
+      .from("user_profiles")
+      .insert({ user_id: userId, username: data.username, city: data.city });
+    setIsLoading(false);
+    if (profileError) {
+      setAuthError("Username taken or invalid.");
+      setStep("username");
       return;
     }
 
-    const userId = verifyData.user?.id;
-    if (userId) {
-      const { error: profileError } = await supabase
-        .from("user_profiles")
-        .insert({ user_id: userId, username: data.username });
-      if (profileError) {
-        setIsLoading(false);
-        setAuthError("Username taken or invalid.");
-        return;
-      }
-    }
-
-    setIsLoading(false);
     onRegister();
   };
 
   const email = getValues("email");
+  const city = watch("city");
 
   return (
     <div className="min-h-screen flex" style={{ background: "var(--mm-bg)", fontFamily: "var(--font-mabry)" }}>
@@ -253,15 +276,15 @@ export function RegisterPage({ onRegister, onGoLogin }: Props) {
             <span style={{ color: "var(--mm-amber)" }}>greatest weapon.</span>
           </h2>
           <p style={{ color: "var(--mm-text-2)", fontSize: "14px", lineHeight: 1.7 }}>
-            Create your account and start training your strategic instincts with daily challenges, AI hints, and global competition.
+            Create your account and start training your strategic instincts with daily challenges, saved stats, and global competition.
           </p>
 
           <div className="grid grid-cols-2 gap-3 mt-9">
             {[
               { value: "Free", label: "Forever", color: "var(--mm-green)" },
-              { value: "98K+", label: "Active players", color: "var(--mm-blue)" },
+              { value: "Live", label: "Real rankings", color: "var(--mm-blue)" },
               { value: "Daily", label: "New challenge", color: "var(--mm-amber)" },
-              { value: "AI", label: "Coaching included", color: "var(--mm-purple)" },
+              { value: "Stats", label: "Progress saved", color: "var(--mm-purple)" },
             ].map((stat) => (
               <div
                 key={stat.label}
@@ -275,22 +298,6 @@ export function RegisterPage({ onRegister, onGoLogin }: Props) {
                 <p style={{ color: "var(--mm-text-3)", fontSize: "11px" }}>{stat.label}</p>
               </div>
             ))}
-          </div>
-        </div>
-
-        <div className="rounded-2xl p-5" style={{ background: "var(--mm-pro-bg)", border: "1px solid var(--mm-border)" }}>
-          <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: "var(--mm-surface-3)", border: "1px solid var(--mm-border)" }}>
-              <StarIcon size={15} color="var(--mm-purple)" />
-            </div>
-            <div>
-              <p style={{ color: "var(--mm-purple)", fontSize: "13px", fontWeight: 700, marginBottom: "4px" }}>
-                Upgrade to Pro later
-              </p>
-              <p style={{ color: "var(--mm-text-3)", fontSize: "12px", lineHeight: 1.5 }}>
-                Custom skins, advanced AI Coach, detailed probability maps. Start free, go Pro when ready.
-              </p>
-            </div>
           </div>
         </div>
       </aside>
@@ -307,8 +314,9 @@ export function RegisterPage({ onRegister, onGoLogin }: Props) {
             </h1>
             <p style={{ color: "var(--mm-text-3)", fontSize: "14px" }}>
               {step === "credentials" && "Enter your email and password"}
-              {step === "username" && "Choose the name other players will see"}
               {step === "code" && `Confirm the code sent to ${email || "your email"}`}
+              {step === "username" && "Choose the name other players will see"}
+              {step === "city" && "Pick the city for your local leaderboard"}
             </p>
           </div>
 
@@ -388,6 +396,23 @@ export function RegisterPage({ onRegister, onGoLogin }: Props) {
               />
             )}
 
+            {step === "city" && (
+              <>
+                <input
+                  type="hidden"
+                  {...register("city", { required: "City is required" })}
+                />
+                <CityPicker
+                  value={city}
+                  onChange={(nextCity) => {
+                    setValue("city", nextCity, { shouldDirty: true, shouldValidate: true });
+                    clearErrors("city");
+                  }}
+                  error={errors.city?.message}
+                />
+              </>
+            )}
+
             {step === "code" && (
               <div className="flex flex-col gap-1.5">
                 <div className="flex items-center justify-between gap-3">
@@ -447,7 +472,7 @@ export function RegisterPage({ onRegister, onGoLogin }: Props) {
 
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || (step === "city" && !city)}
               className="w-full rounded-xl py-3.5 mt-1 transition-colors duration-200 disabled:opacity-60"
               style={{
                 background: "var(--mm-action-bg)",
@@ -458,8 +483,9 @@ export function RegisterPage({ onRegister, onGoLogin }: Props) {
               }}
             >
               {step === "credentials" && "Continue"}
-              {step === "username" && "Send Code"}
-              {step === "code" && (isLoading ? "Finishing..." : "Finish Registration")}
+              {step === "code" && (isLoading ? "Verifying..." : "Verify Code")}
+              {step === "username" && "Continue"}
+              {step === "city" && (isLoading ? "Finishing..." : "Finish Registration")}
             </button>
           </form>
 

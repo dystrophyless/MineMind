@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { BombIcon, RacingFlagIcon, DiamondIcon, FlashIcon, HexagonIcon } from "hugeicons-react";
+import { BombIcon, RacingFlagIcon, FlashIcon, HexagonIcon } from "hugeicons-react";
 import { useT } from "../i18n/LocaleProvider";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -38,17 +38,6 @@ function CellDemo({ type }: { type: "closed" | "empty" | "one" | "two" | "three"
   return <div className={size} style={styles[type]}>{content[type]}</div>;
 }
 
-function ProbBadge({ value, type }: { value: number; type: "safe" | "danger" | "neutral" }) {
-  const color = type === "safe" ? "var(--mm-green)" : type === "danger" ? "var(--mm-red)" : "var(--mm-amber)";
-  const bg = type === "safe" ? "var(--mm-green-glow)" : type === "danger" ? "var(--mm-red-glow)" : "var(--mm-amber-glow)";
-  return (
-    <div className="px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5" style={{ background: bg, border: "1px solid var(--mm-border)" }}>
-      <div className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
-      <span style={{ color, fontSize: "13px", fontWeight: 700 }}>{value}%</span>
-    </div>
-  );
-}
-
 export function DesignSystemShowcase() {
   const t = useT();
   const cells = [
@@ -59,8 +48,6 @@ export function DesignSystemShowcase() {
     { type: "three" as const, label: t("designThree") },
     { type: "flagged" as const, label: t("designFlagged") },
     { type: "mine" as const, label: t("designMine") },
-    { type: "safe" as const, label: t("designAiSafe") },
-    { type: "danger" as const, label: t("designAiDanger") },
   ];
 
   return (
@@ -131,22 +118,6 @@ export function DesignSystemShowcase() {
               <p style={{ color: "var(--mm-text)", fontSize: "20px", fontWeight: 800 }}>{t("leaderboardDaily")} #20260513</p>
               <p style={{ color: "var(--mm-text-2)", fontSize: "12px" }}>{t("designTodayChallenge")}</p>
             </div>
-            <div className="rounded-2xl p-5 w-56" style={{ background: "var(--mm-pro-bg)", border: "1px solid rgba(155,114,239,0.25)" }}>
-              <div className="flex items-center gap-2 mb-2">
-                <DiamondIcon size={14} color="var(--mm-purple)" />
-                <p style={{ color: "var(--mm-purple)", fontSize: "11px", fontWeight: 700 }}>{t("designProCard")}</p>
-              </div>
-              <p style={{ color: "var(--mm-text)", fontSize: "16px", fontWeight: 700 }}>{t("controlsUpgrade")}</p>
-              <p style={{ color: "var(--mm-text-3)", fontSize: "12px" }}>{t("designCustomSkins")}</p>
-            </div>
-          </div>
-        </Section>
-
-        <Section title={t("designProbabilityBadges")}>
-          <div className="flex flex-wrap gap-3">
-            <ProbBadge value={97} type="safe" />
-            <ProbBadge value={64} type="neutral" />
-            <ProbBadge value={31} type="danger" />
           </div>
         </Section>
 

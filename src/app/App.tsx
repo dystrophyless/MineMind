@@ -9,6 +9,7 @@ import { MobileGame } from "./components/MobileGame";
 import { DesignSystemShowcase } from "./components/DesignSystemShowcase";
 import { LoginPage } from "./components/LoginPage";
 import { RegisterPage } from "./components/RegisterPage";
+import { OnboardingPage } from "./components/OnboardingPage";
 import { useAuth } from "./contexts/AuthContext";
 
 type Page = "landing" | "game" | "daily" | "leaderboard" | "profile" | "design" | "login" | "register";
@@ -25,7 +26,8 @@ function useIsMobile() {
 
 export default function App() {
   const [page, setPage] = useState<Page>("landing");
-  const { user, isLoading } = useAuth();
+  const [gameInitialMode, setGameInitialMode] = useState<"classic" | "noFlags" | "timed" | "daily">("classic");
+  const { user, isLoading, needsOnboarding } = useAuth();
   const isAuthenticated = !!user;
   const isMobile = useIsMobile();
   const authRequiredPages = new Set<Page>(["game", "daily", "leaderboard", "profile", "design"]);
@@ -49,6 +51,10 @@ export default function App() {
   };
 
   if (isLoading) return null;
+
+  if (user && needsOnboarding) {
+    return <OnboardingPage onComplete={completeAuth} />;
+  }
 
   if (page === "login") {
     return (
@@ -81,12 +87,16 @@ export default function App() {
       {/* Page content */}
       <div className={`flex-1 ${contentInsetClass}`}>
         {visiblePage === "landing" && (
-          <LandingPage onPlay={() => navigate("game")} onDaily={() => navigate("daily")} />
+          <LandingPage
+            onPlay={() => { setGameInitialMode("classic"); navigate("game"); }}
+            onPlayDaily={() => { setGameInitialMode("daily"); navigate("game"); }}
+          />
         )}
-        {visiblePage === "game" && isMobile && <MobileGame />}
+        {visiblePage === "game" && isMobile && <MobileGame initialMode={gameInitialMode} />}
         {visiblePage === "game" && !isMobile && (
           <GameDashboard
             onNavigate={(p) => navigate(p as Page)}
+            initialMode={gameInitialMode}
           />
         )}
         {visiblePage === "daily" && <DailyChallenge />}

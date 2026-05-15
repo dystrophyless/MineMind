@@ -1,7 +1,7 @@
 import GoogleIcon from "@mui/icons-material/Google";
 import { useState } from "react";
 import { useForm, type UseFormRegisterReturn } from "react-hook-form";
-import { EyeIcon, FlashIcon, BrainIcon, CrownIcon, ChartUpIcon } from "hugeicons-react";
+import { EyeIcon, FlashIcon, CrownIcon, ChartUpIcon } from "hugeicons-react";
 import { Hexagon } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 
@@ -144,7 +144,6 @@ export function LoginPage({ onLogin, onGoRegister }: Props) {
           <div className="flex flex-col gap-3">
             {[
               { icon: <FlashIcon size={15} color="var(--mm-amber)" />, text: "Daily challenge progress" },
-              { icon: <BrainIcon size={15} color="var(--mm-blue)" />, text: "AI Coach preferences" },
               { icon: <CrownIcon size={15} color="var(--mm-purple)" />, text: "Leaderboard identity" },
               { icon: <ChartUpIcon size={15} color="var(--mm-green)" />, text: "Mode records and streak stats" },
             ].map((feature) => (

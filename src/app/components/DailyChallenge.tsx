@@ -19,7 +19,7 @@ export function DailyChallenge() {
   const today = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric" });
   const formatSecs = (s: number) =>
     `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, "0")}`;
-  const rules = [t("dailyRuleSame"), t("dailyRuleAttempts"), t("dailyRuleTimer"), t("dailyRuleNoAi")];
+  const rules = [t("dailyRuleSame"), t("dailyRuleAttempts"), t("dailyRuleTimer")];
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {

@@ -4,24 +4,28 @@ import { useAuth } from "../contexts/AuthContext";
 import { BombIcon, StopWatchIcon, ArrowReloadHorizontalIcon } from "hugeicons-react";
 import { ChevronDownIcon } from "lucide-react";
 import { MinesweeperBoard } from "./game/MinesweeperBoard";
-import { useGameLogic, Difficulty } from "./game/useGameLogic";
+import { useGameLogic, BoardPreset } from "./game/useGameLogic";
 import { applyTimedBoardClear, countCorrectFlags, TIMED_MODE_INITIAL_SECONDS } from "./game/gameRules.mjs";
 import { useT } from "../i18n/LocaleProvider";
 
 type MobileGameMode = "classic" | "noFlags" | "timed" | "daily";
 
-export function MobileGame() {
+type Props = {
+  initialMode?: MobileGameMode;
+};
+
+export function MobileGame({ initialMode = "classic" }: Props) {
   const t = useT();
   const { user } = useAuth();
   const savedRef = useRef(false);
-  const [mode, setMode] = useState<MobileGameMode>("classic");
+  const [mode, setMode] = useState<MobileGameMode>(initialMode);
   const [modeMenuOpen, setModeMenuOpen] = useState(false);
   const [timedSecondsLeft, setTimedSecondsLeft] = useState(TIMED_MODE_INITIAL_SECONDS);
   const [timedMinesFound, setTimedMinesFound] = useState(0);
   const [timedBest, setTimedBest] = useState(0);
   const [bestTime, setBestTime] = useState<number | null>(null);
-  const mobileDifficulty: Difficulty = mode === "daily" ? "daily" : "beginner";
-  const { board, status, time, formatTime, minesLeft, revealCell, toggleFlag, resetGame, endGame } = useGameLogic(mobileDifficulty, {
+  const mobileBoardPreset: BoardPreset = mode === "daily" ? "daily" : "standard";
+  const { board, status, time, formatTime, minesLeft, revealCell, toggleFlag, resetGame, endGame } = useGameLogic(mobileBoardPreset, {
     allowFlags: mode !== "noFlags",
   });
   const modeLabels: Record<MobileGameMode, string> = {
@@ -135,7 +139,6 @@ export function MobileGame() {
     const attempt = {
       user_id: user.id,
       mode,
-      difficulty: "beginner",
       status,
       ...(mode === "timed"
         ? { mines_found: timedMinesFound }

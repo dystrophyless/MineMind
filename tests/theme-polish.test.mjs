@@ -206,8 +206,8 @@ test("mobile play page centers board area and has mode dropdown", () => {
   const mobileGame = readFileSync(MOBILE_GAME, "utf8");
 
   assert.match(mobileGame, /useState<MobileGameMode>\("classic"\)/);
-  assert.match(mobileGame, /const mobileDifficulty: Difficulty = mode === "daily" \? "daily" : "beginner"/);
-  assert.match(mobileGame, /useGameLogic\(mobileDifficulty,/);
+  assert.match(mobileGame, /const mobileBoardPreset: BoardPreset = mode === "daily" \? "daily" : "standard"/);
+  assert.match(mobileGame, /useGameLogic\(mobileBoardPreset,/);
   assert.match(mobileGame, /allowFlags:\s*mode !== "noFlags"/);
   assert.match(mobileGame, /TIMED_MODE_INITIAL_SECONDS/);
   assert.match(mobileGame, /min-h-\[100dvh\]/);
@@ -258,11 +258,16 @@ test("desktop play page uses the same four 9x9 game modes instead of old difficu
   const controls = readFileSync(CONTROL_PANEL, "utf8");
 
   assert.match(dashboard, /useState<GameMode>\("classic"\)/);
-  assert.match(dashboard, /const gameDifficulty: Difficulty = mode === "daily" \? "daily" : "beginner"/);
-  assert.match(dashboard, /useGameLogic\(gameDifficulty,/);
+  assert.match(dashboard, /const gameBoardPreset: BoardPreset = mode === "daily" \? "daily" : "standard"/);
+  assert.match(dashboard, /useGameLogic\(gameBoardPreset,/);
   assert.match(dashboard, /allowFlags:\s*mode !== "noFlags"/);
   assert.match(dashboard, /flagsEnabled=\{mode !== "noFlags"\}/);
-  assert.match(dashboard, /9 x 9/);
+  assert.match(dashboard, /\{t\("mode"\)\}/);
+  assert.match(dashboard, /\{modeLabels\[mode\]\}/);
+  assert.doesNotMatch(dashboard, /modeLabels\[mode\]\} \{t\("mode"\)\}/);
+  assert.doesNotMatch(dashboard, /9 x 9/);
+  assert.doesNotMatch(dashboard, /config\.mines/);
+  assert.doesNotMatch(dashboard, /statusLabel/);
   assert.doesNotMatch(dashboard, /setDifficulty/);
   assert.doesNotMatch(dashboard, /difficultyLabels/);
   assert.match(controls, /type GameMode = "classic" \| "noFlags" \| "timed" \| "daily"/);
@@ -312,7 +317,7 @@ test("game logic supports no-flags and timed mobile modes without changing deskt
   assert.match(logic, /type GameLogicOptions = \{/);
   assert.match(logic, /allowFlags\?: boolean/);
   assert.match(logic, /timeLimit\?: number/);
-  assert.match(logic, /export function useGameLogic\(difficulty: Difficulty, options: GameLogicOptions = \{\}\)/);
+  assert.match(logic, /export function useGameLogic\(boardPreset: BoardPreset, options: GameLogicOptions = \{\}\)/);
   assert.match(logic, /const \{ allowFlags = true, timeLimit \} = options/);
   assert.match(logic, /if \(!allowFlags\) return;/);
   assert.match(logic, /timeLimit !== undefined && next >= timeLimit/);
@@ -403,8 +408,9 @@ test("profile hero removes pro avatar ornament and uses refined rank badges", ()
   assert.doesNotMatch(profileStats, /-top-1 -right-1/);
   assert.match(profileStats, /function ProfileRankBadge/);
   assert.match(profileStats, /h-8 rounded-full px-3/);
-  assert.match(profileStats, /#247 \{t\("leaderboardGlobal"\)\}/);
-  assert.match(profileStats, /#12 in Almaty/);
+  assert.match(profileStats, /#\{profileData\.globalRank\} \{t\("leaderboardGlobal"\)\}/);
+  assert.match(profileStats, /<CityWithCode city=\{profileData\.city\} \/>/);
+  assert.match(profileStats, /CITY_COUNTRY_MAP/);
   assert.match(profileStats, /--mm-pro-badge-bg/);
   assert.match(profileStats, /--mm-nav-control-bg/);
 });

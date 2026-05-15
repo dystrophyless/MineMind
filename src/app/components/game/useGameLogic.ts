@@ -8,18 +8,16 @@ export type CellState = {
 };
 
 export type GameStatus = "idle" | "playing" | "won" | "lost";
-export type Difficulty = "beginner" | "intermediate" | "expert" | "daily";
+export type BoardPreset = "standard" | "daily";
 
 type GameLogicOptions = {
   allowFlags?: boolean;
   timeLimit?: number;
 };
 
-export const DIFFICULTY_CONFIG = {
-  beginner:     { rows: 9,  cols: 9,  mines: 10, label: "Beginner" },
-  intermediate: { rows: 16, cols: 16, mines: 40, label: "Advanced" },
-  expert:       { rows: 16, cols: 30, mines: 99, label: "Expert" },
-  daily:        { rows: 9,  cols: 9,  mines: 10, label: "Daily" },
+export const BOARD_PRESET_CONFIG = {
+  standard: { rows: 9, cols: 9, mines: 10, label: "Standard" },
+  daily: { rows: 9, cols: 9, mines: 10, label: "Daily" },
 };
 
 export const NUMBER_COLORS: Record<number, string> = {
@@ -103,9 +101,9 @@ function revealCells(board: Board, row: number, col: number, rows: number, cols:
   return newBoard;
 }
 
-export function useGameLogic(difficulty: Difficulty, options: GameLogicOptions = {}) {
+export function useGameLogic(boardPreset: BoardPreset, options: GameLogicOptions = {}) {
   const { allowFlags = true, timeLimit } = options;
-  const config = DIFFICULTY_CONFIG[difficulty];
+  const config = BOARD_PRESET_CONFIG[boardPreset];
   const [board, setBoard] = useState<Board>(() => createEmptyBoard(config.rows, config.cols));
   const [status, setStatus] = useState<GameStatus>("idle");
   const [time, setTime] = useState(0);
@@ -128,7 +126,7 @@ export function useGameLogic(difficulty: Difficulty, options: GameLogicOptions =
 
   useEffect(() => {
     resetGame();
-  }, [difficulty, allowFlags, timeLimit, resetGame]);
+  }, [boardPreset, allowFlags, timeLimit, resetGame]);
 
   useEffect(() => {
     if (status === "playing") {
