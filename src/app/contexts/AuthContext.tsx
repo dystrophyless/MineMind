@@ -6,6 +6,8 @@ type AuthContextValue = {
   user: User | null;
   session: Session | null;
   isLoading: boolean;
+  needsOnboarding: boolean;
+  completeOnboarding: () => void;
   signOut: () => Promise<void>;
 };
 
@@ -15,52 +17,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const syncAuthState = async (session: Session | null) => {
       setSession(session);
       setUser(session?.user ?? null);
+      setNeedsOnboarding(false);
+
+      const authUser = session?.user;
+      if (authUser) {
+        const { data: existing, error } = await supabase
+          .from("user_profiles")
+          .select("user_id")
+          .eq("user_id", authUser.id)
+          .maybeSingle();
+
+        if (error || !existing) {
+          setNeedsOnboarding(true);
+        }
+      }
+
       setIsLoading(false);
+    };
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      syncAuthState(session);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setIsLoading(false);
-
-      const oauthUser = session?.user;
-      const isOAuth = oauthUser?.app_metadata?.provider !== "email";
-      if (oauthUser && isOAuth) {
-        supabase
-          .from("user_profiles")
-          .select("user_id")
-          .eq("user_id", oauthUser.id)
-          .maybeSingle()
-          .then(({ data: existing }) => {
-            if (!existing) {
-              const base = (oauthUser.email?.split("@")[0] ?? "player")
-                .replace(/[^a-zA-Z0-9_]/g, "_")
-                .slice(0, 14);
-              const username = `${base}_${oauthUser.id.slice(0, 5)}`;
-              supabase.from("user_profiles").insert({
-                user_id: oauthUser.id,
-                username,
-                member_since: new Date().toISOString(),
-              });
-            }
-          });
-      }
+      setIsLoading(true);
+      syncAuthState(session);
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
+  const completeOnboarding = () => {
+    setNeedsOnboarding(false);
+  };
+
   const signOut = async () => {
+    setNeedsOnboarding(false);
     await supabase.auth.signOut();
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, isLoading, signOut }}>
+    <AuthContext.Provider value={{ user, session, isLoading, needsOnboarding, completeOnboarding, signOut }}>
       {children}
     </AuthContext.Provider>
   );
