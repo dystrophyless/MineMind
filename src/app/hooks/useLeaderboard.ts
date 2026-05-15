@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../contexts/AuthContext";
+import { useT } from "../i18n/LocaleProvider";
 
 type RankedMode = "classic" | "timed" | "noFlags";
 type Period = "allTime" | "monthly" | "weekly";
@@ -23,6 +24,7 @@ function periodStart(period: Period): string {
 }
 
 export function useLeaderboard(mode: RankedMode, period: Period, scope: Scope) {
+  const t = useT();
   const { user } = useAuth();
   const [rows, setRows] = useState<LeaderboardRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -84,7 +86,7 @@ export function useLeaderboard(mode: RankedMode, period: Period, scope: Scope) {
           player: profile?.username ?? "?",
           city: profile?.city ?? null,
           score,
-          scoreLabel: mode === "timed" ? `${score} mines` : `${(score as number).toFixed(2)} sec`,
+          scoreLabel: mode === "timed" ? `${score} ${t("boardMines")}` : `${(score as number).toFixed(2)} ${t("unitSec")}`,
           rank: i + 1,
           isMe: e.user_id === user?.id,
         };

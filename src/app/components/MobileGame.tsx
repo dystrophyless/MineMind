@@ -242,7 +242,7 @@ export function MobileGame() {
         <span style={{ color: "var(--mm-text-2)", fontSize: "11px", fontWeight: 700 }}>{modeLabels[mode]}</span>
         <span style={{ color: "var(--mm-amber)", fontSize: "11px", fontWeight: 800 }}>
           {mode === "timed"
-            ? `${t("tableBest")} ${timedBest} mines`
+            ? `${t("tableBest")} ${timedBest} ${t("boardMines")}`
             : bestTime !== null
               ? `${t("tableBest")} ${formatTime(Math.round(bestTime))}`
               : `${t("tableBest")} —`}
@@ -250,7 +250,7 @@ export function MobileGame() {
       </div>
       {mode === "timed" && (
         <div className="flex items-center justify-center gap-3 px-4 py-2" style={{ background: "var(--mm-surface-1)", borderBottom: "1px solid var(--mm-border)" }}>
-          <span style={{ color: "var(--mm-text-2)", fontSize: "12px", fontWeight: 700 }}>{t("mobileTimedScore")} {timedMinesFound} mines</span>
+          <span style={{ color: "var(--mm-text-2)", fontSize: "12px", fontWeight: 700 }}>{t("mobileTimedScore")} {timedMinesFound} {t("boardMines")}</span>
           <span style={{ color: "var(--mm-text-3)", fontSize: "12px" }}>+5s {t("mobileTimedBonus")}</span>
         </div>
       )}

@@ -58,17 +58,17 @@ export function DailyChallenge() {
             <div className="rounded-2xl p-4 sm:p-5 w-fit max-w-full mx-auto" style={{ background: "var(--mm-surface-1)", border: "1px solid var(--mm-border)" }}>
               {attemptStatus === "loading" && (
                 <div style={{ padding: "48px", textAlign: "center", color: "var(--mm-text-3)" }}>
-                  Loading...
+                  {t("loading")}
                 </div>
               )}
 
               {(attemptStatus === "won" || attemptStatus === "lost") && (
                 <div className="rounded-2xl p-8 text-center" style={{ background: "var(--mm-surface-1)", border: "1px solid var(--mm-border)" }}>
                   <p style={{ color: attemptStatus === "won" ? "var(--mm-green)" : "var(--mm-red)", fontSize: "18px", fontWeight: 800 }}>
-                    {attemptStatus === "won" ? "Challenge completed!" : "Better luck tomorrow!"}
+                    {attemptStatus === "won" ? t("dailyCompleted") : t("dailyBetterLuck")}
                   </p>
                   <p style={{ color: "var(--mm-text-3)", fontSize: "13px", marginTop: "8px" }}>
-                    You've used your one attempt for today. Come back tomorrow.
+                    {t("dailyUsedAttempt")}
                   </p>
                 </div>
               )}
@@ -141,7 +141,7 @@ export function DailyChallenge() {
               </div>
               <div className="flex flex-col gap-2">
                 {stats.topPlayers.length === 0 ? (
-                  <p style={{ color: "var(--mm-text-3)", fontSize: "12px" }}>No completions yet today</p>
+                  <p style={{ color: "var(--mm-text-3)", fontSize: "12px" }}>{t("dailyNoCompletions")}</p>
                 ) : (
                   stats.topPlayers.map(p => (
                     <div key={p.rank} className="flex items-center gap-3 rounded-xl px-3 py-2"

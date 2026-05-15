@@ -55,7 +55,7 @@ export function ProfileStats() {
     { name: "profileBadgeScholar", desc: "profileBadgeScholarDesc" },
   ];
 
-  if (isLoading) return <div style={{ padding: "64px", textAlign: "center", color: "var(--mm-text-3)" }}>Loading…</div>;
+  if (isLoading) return <div style={{ padding: "64px", textAlign: "center", color: "var(--mm-text-3)" }}>{t("loading")}</div>;
   if (!profileData) return null;
 
   const stats = [
@@ -83,7 +83,7 @@ export function ProfileStats() {
   const recentGames: { mode: string; time: string; result: RecentGameResult; date: string }[] = profileData.recentGames.map(g => ({
     mode: t(modeKeyMap[g.mode] ?? "mobileModeClassic"),
     time: g.mode === "timed"
-      ? `${g.minesFound ?? 0} mines`
+      ? `${g.minesFound ?? 0} ${t("boardMines")}`
       : g.timeSeconds ? formatTime(g.timeSeconds) : "—",
     result: g.status,
     date: new Date(g.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
@@ -103,7 +103,7 @@ export function ProfileStats() {
               <ProfileRankBadge tone="global" icon={<CrownIcon size={12} color="currentColor" />}>
                 — {t("leaderboardGlobal")}
               </ProfileRankBadge>
-              <ProfileRankBadge tone="city">— {profileData.city ? `in ${profileData.city}` : "—"}</ProfileRankBadge>
+              <ProfileRankBadge tone="city">— {profileData.city ? `${t("profileCityIn")} ${profileData.city}` : "—"}</ProfileRankBadge>
             </div>
             <p style={{ color: "var(--mm-text-2)", fontSize: "13px", marginBottom: "12px" }}>{t("profileMemberSince")}</p>
             <div>

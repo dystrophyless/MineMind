@@ -20,6 +20,16 @@ export const translations = {
     settingsWhite: "White",
     settingsBlack: "Black",
 
+    loading: "Loading…",
+    noResultsYet: "No results yet",
+    unitSec: "sec",
+    profileCityIn: "in",
+
+    dailyCompleted: "Challenge completed!",
+    dailyBetterLuck: "Better luck tomorrow!",
+    dailyUsedAttempt: "You've used your one attempt for today. Come back tomorrow.",
+    dailyNoCompletions: "No completions yet today",
+
     landingBadge: "Daily Challenge Live Now",
     landingTitleBefore: "Minesweeper,",
     landingTitleAccent: "rebuilt",
@@ -235,6 +245,16 @@ export const translations = {
     settingsTheme: "Тема",
     settingsWhite: "Белая",
     settingsBlack: "Черная",
+
+    loading: "Загрузка…",
+    noResultsYet: "Пока нет результатов",
+    unitSec: "сек",
+    profileCityIn: "г.",
+
+    dailyCompleted: "Испытание пройдено!",
+    dailyBetterLuck: "Удачи завтра!",
+    dailyUsedAttempt: "Вы использовали попытку на сегодня. Возвращайтесь завтра.",
+    dailyNoCompletions: "Сегодня ещё нет прохождений",
 
     landingBadge: "Ежедневное испытание уже идет",
     landingTitleBefore: "Сапер,",

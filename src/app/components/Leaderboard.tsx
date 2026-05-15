@@ -122,9 +122,9 @@ export function Leaderboard() {
           </div>
 
           {leaderboardLoading ? (
-            <div style={{ padding: "32px", textAlign: "center", color: "var(--mm-text-3)" }}>Loading…</div>
+            <div style={{ padding: "32px", textAlign: "center", color: "var(--mm-text-3)" }}>{t("loading")}</div>
           ) : rows.length === 0 ? (
-            <div style={{ padding: "32px", textAlign: "center", color: "var(--mm-text-3)" }}>No results yet</div>
+            <div style={{ padding: "32px", textAlign: "center", color: "var(--mm-text-3)" }}>{t("noResultsYet")}</div>
           ) : (
             rows.map((row, i) => (
               <div
