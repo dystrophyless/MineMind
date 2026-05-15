@@ -7,8 +7,10 @@ import { Leaderboard } from "./components/Leaderboard";
 import { ProfileStats } from "./components/ProfileStats";
 import { MobileGame } from "./components/MobileGame";
 import { DesignSystemShowcase } from "./components/DesignSystemShowcase";
+import { LoginPage } from "./components/LoginPage";
+import { RegisterPage } from "./components/RegisterPage";
 
-type Page = "landing" | "game" | "daily" | "leaderboard" | "profile" | "design";
+type Page = "landing" | "game" | "daily" | "leaderboard" | "profile" | "design" | "login" | "register";
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -22,12 +24,36 @@ function useIsMobile() {
 
 export default function App() {
   const [page, setPage] = useState<Page>("landing");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const isMobile = useIsMobile();
 
   const navigate = (p: Page) => {
     setPage(p);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
+
+  const completeAuth = () => {
+    setIsAuthenticated(true);
+    navigate("profile");
+  };
+
+  if (page === "login") {
+    return (
+      <LoginPage
+        onLogin={completeAuth}
+        onGoRegister={() => navigate("register")}
+      />
+    );
+  }
+
+  if (page === "register") {
+    return (
+      <RegisterPage
+        onRegister={completeAuth}
+        onGoLogin={() => navigate("login")}
+      />
+    );
+  }
 
   if (isMobile && page === "game") {
     return (
@@ -47,7 +73,7 @@ export default function App() {
     >
       {/* Sticky nav */}
       <div className="sticky top-0 z-50">
-        <NavBar currentPage={page} onNavigate={navigate} />
+        <NavBar currentPage={page} isAuthenticated={isAuthenticated} onNavigate={navigate} />
       </div>
 
       {/* Page content */}
