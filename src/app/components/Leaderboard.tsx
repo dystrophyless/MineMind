@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { CrownIcon, MedalFirstPlaceIcon, MedalSecondPlaceIcon, MedalThirdPlaceIcon } from "hugeicons-react";
-import { getBestLeaderboardRows, LEADERBOARD_PERIODS, MOCK_LEADERBOARD_ATTEMPTS, RANKED_GAME_MODES } from "./game/gameRules.mjs";
+import { LEADERBOARD_PERIODS, RANKED_GAME_MODES } from "./game/gameRules.mjs";
+import { useLeaderboard } from "../hooks/useLeaderboard";
 import { useT } from "../i18n/LocaleProvider";
 
 type RankedMode = "classic" | "timed" | "noFlags";
@@ -22,10 +23,7 @@ export function Leaderboard() {
   const [hoveredScope, setHoveredScope] = useState<LeaderboardScope | null>(null);
   const [hoveredTab, setHoveredTab] = useState<RankedMode | null>(null);
   const [hoveredPeriod, setHoveredPeriod] = useState<LeaderboardPeriod | null>(null);
-  const attempts = scope === "city"
-    ? MOCK_LEADERBOARD_ATTEMPTS.filter(attempt => attempt.city === "Almaty")
-    : MOCK_LEADERBOARD_ATTEMPTS;
-  const rows = getBestLeaderboardRows(attempts, tab, period);
+  const { rows, isLoading: leaderboardLoading } = useLeaderboard(tab, period, scope);
   const scopeLabels: Record<LeaderboardScope, string> = {
     global: t("leaderboardGlobal"),
     city: t("leaderboardCity"),
@@ -123,32 +121,38 @@ export function Leaderboard() {
             ))}
           </div>
 
-          {rows.map((row, i) => (
-            <div
-              key={`${row.playerId}-${row.rank}`}
-              className="grid px-4 py-3.5 items-center"
-              style={{
-                gridTemplateColumns: "60px 1fr 120px",
-                background: row.isMe ? "var(--mm-amber-glow)" : i % 2 === 0 ? "var(--mm-surface-1)" : "var(--mm-bg)",
-                borderBottom: "1px solid var(--mm-border)",
-                borderLeft: row.isMe ? "3px solid var(--mm-amber)" : "3px solid transparent",
-              }}
-            >
-              <div className="flex items-center"><RankIcon rank={row.rank} /></div>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: row.isMe ? "var(--mm-action-bg)" : "var(--mm-surface-3)", border: `1px solid ${row.isMe ? "var(--mm-amber)" : "var(--mm-border)"}` }}>
-                  <span style={{ color: row.isMe ? "var(--mm-action-fg)" : "var(--mm-text-2)", fontSize: "12px", fontWeight: 700 }}>{row.player[0]}</span>
+          {leaderboardLoading ? (
+            <div style={{ padding: "32px", textAlign: "center", color: "var(--mm-text-3)" }}>Loading…</div>
+          ) : rows.length === 0 ? (
+            <div style={{ padding: "32px", textAlign: "center", color: "var(--mm-text-3)" }}>No results yet</div>
+          ) : (
+            rows.map((row, i) => (
+              <div
+                key={`${row.playerId}-${row.rank}`}
+                className="grid px-4 py-3.5 items-center"
+                style={{
+                  gridTemplateColumns: "60px 1fr 120px",
+                  background: row.isMe ? "var(--mm-amber-glow)" : i % 2 === 0 ? "var(--mm-surface-1)" : "var(--mm-bg)",
+                  borderBottom: "1px solid var(--mm-border)",
+                  borderLeft: row.isMe ? "3px solid var(--mm-amber)" : "3px solid transparent",
+                }}
+              >
+                <div className="flex items-center"><RankIcon rank={row.rank} /></div>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: row.isMe ? "var(--mm-action-bg)" : "var(--mm-surface-3)", border: `1px solid ${row.isMe ? "var(--mm-amber)" : "var(--mm-border)"}` }}>
+                    <span style={{ color: row.isMe ? "var(--mm-action-fg)" : "var(--mm-text-2)", fontSize: "12px", fontWeight: 700 }}>{row.player[0]}</span>
+                  </div>
+                  <div>
+                    <span style={{ color: row.isMe ? "var(--mm-amber)" : "var(--mm-text)", fontSize: "13px", fontWeight: row.isMe ? 700 : 500 }}>
+                      {row.isMe ? t("leaderboardYou") : row.player}
+                    </span>
+                    <div style={{ color: "var(--mm-text-3)", fontSize: "11px" }}>{row.city}</div>
+                  </div>
                 </div>
-                <div>
-                  <span style={{ color: row.isMe ? "var(--mm-amber)" : "var(--mm-text)", fontSize: "13px", fontWeight: row.isMe ? 700 : 500 }}>
-                    {row.isMe ? t("leaderboardYou") : row.player}
-                  </span>
-                  <div style={{ color: "var(--mm-text-3)", fontSize: "11px" }}>{row.city}</div>
-                </div>
+                <span style={{ color: tab === "timed" ? "var(--mm-red)" : "var(--mm-amber)", fontSize: "13px", fontWeight: 800 }}>{row.scoreLabel}</span>
               </div>
-              <span style={{ color: tab === "timed" ? "var(--mm-red)" : "var(--mm-amber)", fontSize: "13px", fontWeight: 800 }}>{row.scoreLabel}</span>
-            </div>
-          ))}
+            ))
+          )}
         </div>
 
         <p style={{ color: "var(--mm-text-3)", fontSize: "12px", textAlign: "center", marginTop: "16px" }}>{t("leaderboardFooter")}</p>
