@@ -8,6 +8,7 @@ import { AICoach } from "./game/AICoach";
 import { useGameLogic, Difficulty } from "./game/useGameLogic";
 import { applyTimedBoardClear, countCorrectFlags, TIMED_MODE_INITIAL_SECONDS } from "./game/gameRules.mjs";
 import { useT } from "../i18n/LocaleProvider";
+import { useProfileStats } from "../hooks/useProfileStats";
 
 type GameMode = "classic" | "noFlags" | "timed" | "daily";
 
@@ -18,6 +19,8 @@ type Props = {
 export function GameDashboard({ onNavigate }: Props) {
   const t = useT();
   const { user } = useAuth();
+  const { data: profileData } = useProfileStats();
+  const todayLabel = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" });
   const savedRef = useRef(false);
   const [mode, setMode] = useState<GameMode>("classic");
   const [timedSecondsLeft, setTimedSecondsLeft] = useState(TIMED_MODE_INITIAL_SECONDS);
@@ -155,7 +158,7 @@ export function GameDashboard({ onNavigate }: Props) {
                   <FlashIcon size={14} color="var(--mm-amber)" />
                   <span style={{ color: "var(--mm-amber)", fontSize: "12px", fontWeight: 600 }}>{t("dailyTitle")}</span>
                 </div>
-                <p style={{ color: "var(--mm-text)", fontSize: "18px", fontWeight: 800 }}>May 13</p>
+                <p style={{ color: "var(--mm-text)", fontSize: "18px", fontWeight: 800 }}>{todayLabel}</p>
                 <p style={{ color: "var(--mm-text-3)", fontSize: "11px" }}>{t("miniDailyAttempts")}</p>
               </button>
 
@@ -164,7 +167,9 @@ export function GameDashboard({ onNavigate }: Props) {
                   <CrownIcon size={14} color="var(--mm-purple)" />
                   <span style={{ color: "var(--mm-purple)", fontSize: "12px", fontWeight: 600 }}>{t("leaderboardTitle")}</span>
                 </div>
-                <p style={{ color: "var(--mm-text)", fontSize: "18px", fontWeight: 800 }}>#247</p>
+                <p style={{ color: "var(--mm-text)", fontSize: "18px", fontWeight: 800 }}>
+                  {profileData?.globalRank ? `#${profileData.globalRank}` : "—"}
+                </p>
                 <p style={{ color: "var(--mm-text-3)", fontSize: "11px" }}>{t("miniGlobalRank")}</p>
               </button>
 
@@ -173,7 +178,9 @@ export function GameDashboard({ onNavigate }: Props) {
                   <BrainIcon size={14} color="var(--mm-blue)" />
                   <span style={{ color: "var(--mm-blue)", fontSize: "12px", fontWeight: 600 }}>{t("navStats")}</span>
                 </div>
-                <p style={{ color: "var(--mm-text)", fontSize: "18px", fontWeight: 800 }}>82%</p>
+                <p style={{ color: "var(--mm-text)", fontSize: "18px", fontWeight: 800 }}>
+                  {profileData ? `${profileData.winRate}%` : "—"}
+                </p>
                 <p style={{ color: "var(--mm-text-3)", fontSize: "11px" }}>{t("miniWinStreak")}</p>
               </button>
             </div>
