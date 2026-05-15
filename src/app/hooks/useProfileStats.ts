@@ -33,6 +33,7 @@ export type ProfileData = {
   bestTimeSeconds: number | null;
   currentStreak: number;
   favoriteMode: string;
+  globalRank: number | null;
   recentGames: RecentGame[];
   modeStats: ModeStatRow[];
   badges: BadgeState[];
@@ -130,6 +131,7 @@ export function useProfileStats() {
         bestTimeSeconds,
         currentStreak: streak,
         favoriteMode,
+        globalRank: null,
         recentGames,
         modeStats,
         badges,
