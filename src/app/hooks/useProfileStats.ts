@@ -45,7 +45,9 @@ export function useProfileStats() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) { setIsLoading(false); return; }
+    if (!user) { setData(null); setIsLoading(false); return; }
+
+    let cancelled = false;
 
     async function load() {
       const [profileRes, attemptsRes] = await Promise.all([
@@ -120,6 +122,7 @@ export function useProfileStats() {
         { key: "scholar", unlocked: gamesPlayed >= 100 },
       ];
 
+      if (cancelled) return;
       setData({
         username: profile?.username ?? user!.email?.split("@")[0] ?? "You",
         avatarInitial: (profile?.username?.[0] ?? "Y").toUpperCase(),
@@ -140,6 +143,7 @@ export function useProfileStats() {
     }
 
     load();
+    return () => { cancelled = true; };
   }, [user]);
 
   return { data, isLoading };
