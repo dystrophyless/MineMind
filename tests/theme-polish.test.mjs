@@ -8,6 +8,7 @@ const ROOT = dirname(fileURLToPath(new URL("../package.json", import.meta.url)))
 const SRC = join(ROOT, "src");
 const THEME_CSS = join(SRC, "styles", "theme.css");
 const NAV_BAR = join(SRC, "app", "components", "NavBar.tsx");
+const LANDING_PAGE = join(SRC, "app", "components", "LandingPage.tsx");
 const LEADERBOARD = join(SRC, "app", "components", "Leaderboard.tsx");
 const DAILY_CHALLENGE = join(SRC, "app", "components", "DailyChallenge.tsx");
 const PROFILE_STATS = join(SRC, "app", "components", "ProfileStats.tsx");
@@ -64,6 +65,15 @@ test("white theme board cells have visible contrast", () => {
   assert.equal(whiteThemeVariable("--mm-cell-open-bg"), "#F8FAFC");
   assert.equal(whiteThemeVariable("--mm-cell-empty-bg"), "#E8EDF5");
   assert.match(whiteThemeVariable("--cell-closed-shadow"), /rgba\(15,23,42,0\.22\)/);
+});
+
+test("white theme landing cta uses a non-amber contrast border", () => {
+  const theme = readFileSync(THEME_CSS, "utf8");
+  const landingPage = readFileSync(LANDING_PAGE, "utf8");
+
+  assert.match(theme, /--mm-cta-border:\s*var\(--mm-border-amber\);/);
+  assert.equal(whiteThemeVariable("--mm-cta-border"), "rgba(37, 99, 235, 0.24)");
+  assert.match(landingPage, /border:\s*"1px solid var\(--mm-cta-border\)"/);
 });
 
 test("nav buttons use tokenized hover feedback", () => {

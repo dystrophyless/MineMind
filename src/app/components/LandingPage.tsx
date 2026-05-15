@@ -170,7 +170,7 @@ export function LandingPage({ onPlay, onDaily }: Props) {
         </div>
       </section>
 
-      <section className="mx-6 mb-20 rounded-3xl p-12 text-center relative overflow-hidden" style={{ background: "var(--mm-cta-bg)", border: "1px solid var(--mm-border-amber)" }}>
+      <section className="mx-6 mb-20 rounded-3xl p-12 text-center relative overflow-hidden" style={{ background: "var(--mm-cta-bg)", border: "1px solid var(--mm-cta-border)" }}>
         <div className="absolute inset-0 pointer-events-none" style={{ background: "transparent" }} />
         <div className="relative">
           <h2 style={{ color: "var(--mm-text)", fontSize: "clamp(24px, 4vw, 40px)", fontWeight: 800, marginBottom: "12px" }}>{t("landingCtaTitle")}</h2>
