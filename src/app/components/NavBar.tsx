@@ -4,16 +4,18 @@ import { CircleUserRound, Hexagon } from "lucide-react";
 import { useT } from "../i18n/LocaleProvider";
 import { SettingsControls } from "./SettingsControls";
 
-type Page = "landing" | "game" | "daily" | "leaderboard" | "profile" | "design";
+type Page = "landing" | "game" | "daily" | "leaderboard" | "profile" | "design" | "login" | "register";
 
 type Props = {
   currentPage: Page;
+  isAuthenticated: boolean;
   onNavigate: (page: Page) => void;
 };
 
-export function NavBar({ currentPage, onNavigate }: Props) {
+export function NavBar({ currentPage, isAuthenticated, onNavigate }: Props) {
   const t = useT();
-  const navItems: { page: Page; label: string; icon: ReactNode }[] = [
+  const profileLabel = isAuthenticated ? t("mobileProfile") : t("navSignIn");
+  const navItems: { page: Exclude<Page, "login" | "register">; label: string; icon: ReactNode }[] = [
     { page: "daily", label: t("navDaily"), icon: <FlashIcon size={14} color="inherit" /> },
     { page: "leaderboard", label: t("navLeaderboard"), icon: <CrownIcon size={14} color="inherit" /> },
     { page: "profile", label: t("navStats"), icon: <BrainIcon size={14} color="inherit" /> },
@@ -94,8 +96,8 @@ export function NavBar({ currentPage, onNavigate }: Props) {
           <SettingsControls />
         </div>
         <button
-          onClick={() => onNavigate("profile")}
-          aria-label={t("mobileProfile")}
+          onClick={() => onNavigate(isAuthenticated ? "profile" : "login")}
+          aria-label={profileLabel}
           className="h-9 rounded-lg flex items-center justify-center md:justify-start gap-2 px-2 md:px-3 transition-all duration-200 hover:brightness-110 active:scale-95"
           style={{
             background: currentPage === "profile" ? "var(--mm-amber-glow)" : "var(--mm-nav-control-bg)",
@@ -109,7 +111,7 @@ export function NavBar({ currentPage, onNavigate }: Props) {
             className="hidden md:inline"
             style={{ fontSize: "13px", fontWeight: 700, fontFamily: "var(--font-mabry)" }}
           >
-            {t("mobileProfile")}
+            {profileLabel}
           </span>
         </button>
         {/* Mobile menu */}
