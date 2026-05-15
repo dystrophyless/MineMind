@@ -181,6 +181,7 @@ export function LoginPage({ onLogin, onGoRegister }: Props) {
 
           <button
             type="button"
+            onClick={() => supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin } })}
             className="w-full flex items-center justify-center gap-2.5 rounded-xl py-3 transition-colors duration-200"
             style={{
               background: "var(--mm-surface-2)",
