@@ -137,7 +137,7 @@ export function LoginPage({ onLogin, onGoRegister }: Props) {
               { icon: <FlashIcon size={15} color="var(--mm-amber)" />, text: "Daily challenge progress" },
               { icon: <BrainIcon size={15} color="var(--mm-blue)" />, text: "AI Coach preferences" },
               { icon: <CrownIcon size={15} color="var(--mm-purple)" />, text: "Leaderboard identity" },
-              { icon: <ChartUpIcon size={15} color="var(--mm-green)" />, text: "Accuracy and streak stats" },
+              { icon: <ChartUpIcon size={15} color="var(--mm-green)" />, text: "Mode records and streak stats" },
             ].map((feature) => (
               <div key={feature.text} className="flex items-center gap-3">
                 <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: "var(--mm-surface-3)", border: "1px solid var(--mm-border)" }}>

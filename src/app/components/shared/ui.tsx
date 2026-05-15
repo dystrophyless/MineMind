@@ -72,26 +72,23 @@ export function LeaderboardRow({
   rank,
   name,
   time,
-  accuracy,
   current
 }: {
   rank: number;
   name: string;
   time: string;
-  accuracy: string;
   current?: boolean;
 }) {
   return (
     <div
       className={cx(
-        "grid grid-cols-[44px_1fr_64px_64px] items-center gap-2 rounded-md border-2 border-border px-3 py-2 text-sm",
+        "grid grid-cols-[44px_1fr_64px] items-center gap-2 rounded-md border-2 border-border px-3 py-2 text-sm",
         current ? "bg-accent text-surface" : "bg-elevated text-text"
       )}
     >
       <strong>#{rank}</strong>
       <span className="truncate font-bold">{name}</span>
       <span>{time}</span>
-      <span>{accuracy}</span>
     </div>
   );
 }

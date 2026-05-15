@@ -11,6 +11,8 @@ const THEME_CSS = join(SRC, "styles", "theme.css");
 const APP = join(SRC, "app", "App.tsx");
 const NAV_BAR = join(SRC, "app", "components", "NavBar.tsx");
 const LANDING_PAGE = join(SRC, "app", "components", "LandingPage.tsx");
+const GAME_DASHBOARD = join(SRC, "app", "components", "GameDashboard.tsx");
+const CONTROL_PANEL = join(SRC, "app", "components", "game", "ControlPanel.tsx");
 const MOBILE_GAME = join(SRC, "app", "components", "MobileGame.tsx");
 const LEADERBOARD = join(SRC, "app", "components", "Leaderboard.tsx");
 const DAILY_CHALLENGE = join(SRC, "app", "components", "DailyChallenge.tsx");
@@ -84,7 +86,7 @@ test("white theme landing cta uses the standard page border token", () => {
 test("landing cta uses the same max-width rhythm as other landing sections", () => {
   const landingPage = readFileSync(LANDING_PAGE, "utf8");
 
-  assert.match(landingPage, /<section className="max-w-7xl mx-auto px-6 mb-20">/);
+  assert.match(landingPage, /<section id="landing-cta" className="max-w-7xl mx-auto px-6 mb-20">/);
   assert.match(landingPage, /rounded-3xl p-12 text-center relative overflow-hidden/);
   assert.doesNotMatch(landingPage, /<section className="mx-6 mb-20 rounded-3xl/);
 });
@@ -134,6 +136,17 @@ test("pro nav item does not render a duplicate badge", () => {
   assert.doesNotMatch(navBar, /toUpperCase\(\)/);
 });
 
+test("nav keeps play while daily and pro links are removed", () => {
+  const navBar = readFileSync(NAV_BAR, "utf8");
+  const desktopNavItems = navBar.match(/const navItems:[\s\S]*?= \[([\s\S]*?)\n  \];/)?.[1] ?? "";
+  const mobileNavItems = navBar.match(/const mobileNavItems:[\s\S]*?= \[([\s\S]*?)\n  \];/)?.[1] ?? "";
+
+  assert.match(desktopNavItems, /\{ page: "game", label: t\("mobilePlay"\)/);
+  assert.match(mobileNavItems, /\{ page: "game", label: t\("mobilePlay"\)/);
+  assert.doesNotMatch(navBar, /\{ page: "daily", label: t\("navDaily"\)/);
+  assert.doesNotMatch(navBar, /\{ page: "design", label: t\("navPro"\)/);
+});
+
 test("mobile primary navigation is a bottom bar instead of a top bar", () => {
   const app = readFileSync(APP, "utf8");
   const navBar = readFileSync(NAV_BAR, "utf8");
@@ -148,22 +161,35 @@ test("mobile primary navigation is a bottom bar instead of a top bar", () => {
   assert.doesNotMatch(navBar, /MenuCircleIcon/);
 });
 
-test("logged-out mobile users see landing with top auth navigation only", () => {
+test("logged-out users see auth-only navbar and protected pages require auth", () => {
   const app = readFileSync(APP, "utf8");
   const navBar = readFileSync(NAV_BAR, "utf8");
 
-  assert.match(app, /showMobileGuestHome = isMobile && !isAuthenticated && page !== "login" && page !== "register"/);
-  assert.match(app, /const visiblePage = showMobileGuestHome \? "landing" : page/);
+  assert.match(app, /const authRequiredPages = new Set<Page>\(\["game", "daily", "leaderboard", "profile", "design"\]\)/);
+  assert.match(app, /if \(!isAuthenticated && authRequiredPages\.has\(p\)\)/);
+  assert.match(app, /const showGuestLanding = !isAuthenticated && authRequiredPages\.has\(page\)/);
+  assert.match(app, /const visiblePage = showGuestLanding \? "landing" : page/);
   assert.match(app, /contentInsetClass/);
   assert.match(app, /!isAuthenticated \? "pt-\[64px\] md:pt-0"/);
   assert.match(app, /currentPage=\{visiblePage\}/);
+  assert.doesNotMatch(app, /onLandingSection|scrollToLandingSection|landing-\$\{section\}/);
+  assert.doesNotMatch(navBar, /LandingSection|guestNavItems|landingNavFeatures|landingNavStats|landingNavStart|onLandingSection/);
   assert.match(navBar, /aria-label="Mobile guest navigation"/);
   assert.match(navBar, /className="md:hidden fixed top-0 left-0 right-0 z-50/);
   assert.match(navBar, /onClick=\{\(\) => onNavigate\("login"\)\}/);
   assert.match(navBar, /onClick=\{\(\) => onNavigate\("register"\)\}/);
-  assert.match(navBar, />\s*Log In\s*</);
-  assert.match(navBar, />\s*Sign Up\s*</);
+  assert.match(navBar, /\{t\("navSignIn"\)\}/);
+  assert.match(navBar, /\{t\("navSignUp"\)\}/);
   assert.match(navBar, /if \(!isAuthenticated\)/);
+});
+
+test("landing page exposes sections for guest navbar anchors", () => {
+  const landingPage = readFileSync(LANDING_PAGE, "utf8");
+
+  assert.match(landingPage, /<section id="landing-hero"/);
+  assert.match(landingPage, /id="landing-stats"/);
+  assert.match(landingPage, /<section id="landing-features"/);
+  assert.match(landingPage, /<section id="landing-cta"/);
 });
 
 test("mobile play page does not render a duplicate top header", () => {
@@ -183,7 +209,7 @@ test("mobile play page centers board area and has mode dropdown", () => {
   assert.match(mobileGame, /const mobileDifficulty: Difficulty = mode === "daily" \? "daily" : "beginner"/);
   assert.match(mobileGame, /useGameLogic\(mobileDifficulty,/);
   assert.match(mobileGame, /allowFlags:\s*mode !== "noFlags"/);
-  assert.match(mobileGame, /timeLimit:\s*mode === "timed" \? MOBILE_TIMED_LIMIT_SECONDS : undefined/);
+  assert.match(mobileGame, /TIMED_MODE_INITIAL_SECONDS/);
   assert.match(mobileGame, /min-h-\[100dvh\]/);
   assert.match(mobileGame, /pb-\[calc\(88px\+env\(safe-area-inset-bottom\)\)\]/);
   assert.match(mobileGame, /className="flex items-center justify-between px-4 py-2\.5 gap-3"/);
@@ -227,6 +253,59 @@ test("mobile game modes replace difficulty modes and keep one rating per mode", 
   assert.doesNotMatch(mobileGame, /difficultyExpert/);
 });
 
+test("desktop play page uses the same four 9x9 game modes instead of old difficulties", () => {
+  const dashboard = readFileSync(GAME_DASHBOARD, "utf8");
+  const controls = readFileSync(CONTROL_PANEL, "utf8");
+
+  assert.match(dashboard, /useState<GameMode>\("classic"\)/);
+  assert.match(dashboard, /const gameDifficulty: Difficulty = mode === "daily" \? "daily" : "beginner"/);
+  assert.match(dashboard, /useGameLogic\(gameDifficulty,/);
+  assert.match(dashboard, /allowFlags:\s*mode !== "noFlags"/);
+  assert.match(dashboard, /flagsEnabled=\{mode !== "noFlags"\}/);
+  assert.match(dashboard, /9 x 9/);
+  assert.doesNotMatch(dashboard, /setDifficulty/);
+  assert.doesNotMatch(dashboard, /difficultyLabels/);
+  assert.match(controls, /type GameMode = "classic" \| "noFlags" \| "timed" \| "daily"/);
+  assert.match(controls, /mode: GameMode/);
+  assert.match(controls, /onModeChange: \(mode: GameMode\) => void/);
+  assert.match(controls, /mobileModeClassic/);
+  assert.match(controls, /mobileModeNoFlags/);
+  assert.match(controls, /mobileModeTimed/);
+  assert.match(controls, /mobileModeDaily/);
+  assert.doesNotMatch(controls, /difficultyAdvanced/);
+  assert.doesNotMatch(controls, /difficultyExpert/);
+});
+
+test("daily game mode stays in-place on mobile and desktop", () => {
+  const app = readFileSync(APP, "utf8");
+  const dashboard = readFileSync(GAME_DASHBOARD, "utf8");
+  const controls = readFileSync(CONTROL_PANEL, "utf8");
+  const mobileGame = readFileSync(MOBILE_GAME, "utf8");
+
+  assert.match(app, /<MobileGame \/>/);
+  assert.doesNotMatch(dashboard, /onDailyMode=\{\(\) => onNavigate\("daily"\)\}/);
+  assert.doesNotMatch(controls, /onDailyMode/);
+  assert.match(controls, /onModeChange\(nextMode\);/);
+  assert.doesNotMatch(mobileGame, /onDailyMode/);
+  assert.match(mobileGame, /setMode\(nextMode\);/);
+  assert.doesNotMatch(mobileGame, /navigate\("daily"\)/);
+});
+
+test("timed mode rules are visible in mobile and desktop game surfaces", () => {
+  const mobileGame = readFileSync(MOBILE_GAME, "utf8");
+  const dashboard = readFileSync(GAME_DASHBOARD, "utf8");
+
+  for (const [name, text] of [["MobileGame", mobileGame], ["GameDashboard", dashboard]]) {
+    assert.match(text, /TIMED_MODE_INITIAL_SECONDS/, `${name} should start timed mode at three minutes`);
+    assert.match(text, /mode !== "timed" \|\| status !== "playing"/, `${name} should start timed countdown only after the first reveal`);
+    assert.match(text, /applyTimedBoardClear/, `${name} should add timed bonus and score cleared boards`);
+    assert.match(text, /countCorrectFlags/, `${name} should score only correctly flagged mines`);
+    assert.match(text, /endGame\(\)/, `${name} should end when the timed countdown reaches zero`);
+    assert.match(text, /timedMinesFound/, `${name} should show timed mine score`);
+  }
+}
+);
+
 test("game logic supports no-flags and timed mobile modes without changing desktop defaults", () => {
   const logic = readFileSync(USE_GAME_LOGIC, "utf8");
 
@@ -240,7 +319,39 @@ test("game logic supports no-flags and timed mobile modes without changing deskt
   assert.match(logic, /timeRemaining/);
 });
 
-test("mobile compact board scales to advanced and expert column counts", () => {
+test("leaderboard splits ranked results by game mode and period", () => {
+  const leaderboard = readFileSync(LEADERBOARD, "utf8");
+
+  assert.match(leaderboard, /type LeaderboardScope = "global" \| "city"/);
+  assert.match(leaderboard, /useState<LeaderboardScope>\("global"\)/);
+  assert.match(leaderboard, /leaderboardGlobal/);
+  assert.match(leaderboard, /leaderboardCity/);
+  assert.match(leaderboard, /RANKED_GAME_MODES/);
+  assert.match(leaderboard, /LEADERBOARD_PERIODS/);
+  assert.match(leaderboard, /getBestLeaderboardRows/);
+  assert.match(leaderboard, /leaderboardModeClassic/);
+  assert.match(leaderboard, /leaderboardModeTimed/);
+  assert.match(leaderboard, /leaderboardModeNoFlags/);
+  assert.match(leaderboard, /leaderboardPeriodAllTime/);
+  assert.match(leaderboard, /leaderboardPeriodMonthly/);
+  assert.match(leaderboard, /leaderboardPeriodWeekly/);
+  assert.match(leaderboard, /scoreLabel/);
+});
+
+test("leaderboard filters are grouped into one compact filter panel", () => {
+  const leaderboard = readFileSync(LEADERBOARD, "utf8");
+
+  assert.match(leaderboard, /const filterGroups/);
+  assert.match(leaderboard, /label: t\("leaderboardGlobal"\)/);
+  assert.match(leaderboard, /label: t\("mode"\)/);
+  assert.match(leaderboard, /label: t\("leaderboardPeriodAllTime"\)/);
+  assert.match(leaderboard, /rounded-2xl p-2 mb-6/);
+  assert.match(leaderboard, /grid grid-cols-1 gap-2 md:grid-cols-\[auto_auto_auto\]/);
+  assert.match(leaderboard, /role="group"/);
+  assert.match(leaderboard, /aria-label=\{group\.label\}/);
+});
+
+test("mobile compact board scales to wider column counts if reused", () => {
   const board = readFileSync(MINESWEEPER_BOARD, "utf8");
 
   assert.match(board, /--mm-board-cols/);
@@ -296,4 +407,42 @@ test("profile hero removes pro avatar ornament and uses refined rank badges", ()
   assert.match(profileStats, /#12 in Almaty/);
   assert.match(profileStats, /--mm-pro-badge-bg/);
   assert.match(profileStats, /--mm-nav-control-bg/);
+});
+
+test("accuracy metric is removed from visible product surfaces", () => {
+  const files = [
+    ["LandingPage", readFileSync(LANDING_PAGE, "utf8")],
+    ["GameDashboard", readFileSync(GAME_DASHBOARD, "utf8")],
+    ["ControlPanel", readFileSync(CONTROL_PANEL, "utf8")],
+    ["DailyChallenge", readFileSync(DAILY_CHALLENGE, "utf8")],
+    ["ProfileStats", readFileSync(PROFILE_STATS, "utf8")],
+  ];
+  const translations = readFileSync(join(SRC, "app", "i18n", "translations.ts"), "utf8");
+
+  for (const [name, text] of files) {
+    assert.doesNotMatch(text, /accuracy/i, `${name} should not render or pass accuracy`);
+  }
+  assert.doesNotMatch(translations, /controlsAccuracy|landingAccuracy|dailySolvedAccuracy|profileAvgAccuracy|tableAccuracyShort/);
+});
+
+test("profile stats use current game modes instead of old difficulties", () => {
+  const profileStats = readFileSync(PROFILE_STATS, "utf8");
+  const translations = readFileSync(join(SRC, "app", "i18n", "translations.ts"), "utf8");
+
+  assert.match(profileStats, /profileWinRateByMode/);
+  assert.match(profileStats, /mobileModeClassic/);
+  assert.match(profileStats, /mobileModeNoFlags/);
+  assert.match(profileStats, /mobileModeTimed/);
+  assert.match(profileStats, /mobileModeDaily/);
+  assert.doesNotMatch(profileStats, /difficultyBeginner|difficultyAdvanced|difficultyExpert|profileFavDifficulty/);
+  assert.match(translations, /profileWinRateByMode/);
+  assert.match(translations, /profileFavMode/);
+});
+
+test("pro upgrade cta aligns icon and label as one centered row", () => {
+  const controls = readFileSync(CONTROL_PANEL, "utf8");
+
+  assert.match(controls, /<button className="w-full rounded-lg py-2 inline-flex items-center justify-center gap-1\.5 transition-all duration-200 hover:brightness-110"/);
+  assert.match(controls, /<StarIcon size=\{12\} color="#fff" aria-hidden="true" \/>/);
+  assert.doesNotMatch(controls, /StarIcon[\s\S]*marginRight:\s*"6px"/);
 });

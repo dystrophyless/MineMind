@@ -1,16 +1,19 @@
 import type { ReactNode } from "react";
-import { StopWatchIcon, BombIcon, TargetDollarIcon, FireIcon, ArrowReloadHorizontalIcon, ShareKnowledgeIcon, StarIcon, DiamondIcon, FlashIcon } from "hugeicons-react";
-import { Difficulty, GameStatus } from "./useGameLogic";
+import { StopWatchIcon, BombIcon, FireIcon, ArrowReloadHorizontalIcon, ShareKnowledgeIcon, StarIcon, DiamondIcon, FlashIcon } from "hugeicons-react";
+import { GameStatus } from "./useGameLogic";
 import { useT } from "../../i18n/LocaleProvider";
 
+type GameMode = "classic" | "noFlags" | "timed" | "daily";
+
 type Props = {
-  difficulty: Difficulty;
-  onDifficultyChange: (d: Difficulty) => void;
+  mode: GameMode;
+  onModeChange: (mode: GameMode) => void;
   time: string;
   minesLeft: number;
-  accuracy: number;
   status: GameStatus;
   onRestart: () => void;
+  timedMinesFound?: number;
+  timedBest?: number;
 };
 
 function StatBlock({ icon, label, value, color }: { icon: ReactNode; label: string; value: string | number; color?: string }) {
@@ -25,21 +28,24 @@ function StatBlock({ icon, label, value, color }: { icon: ReactNode; label: stri
   );
 }
 
-export function ControlPanel({ difficulty, onDifficultyChange, time, minesLeft, accuracy, status, onRestart }: Props) {
+export function ControlPanel({ mode, onModeChange, time, minesLeft, status, onRestart, timedMinesFound = 0, timedBest = 0 }: Props) {
   const t = useT();
-  const diffs: { key: Difficulty; label: string }[] = [
-    { key: "beginner", label: t("difficultyBeginner") },
-    { key: "intermediate", label: t("difficultyAdvanced") },
-    { key: "expert", label: t("difficultyExpert") },
-    { key: "daily", label: t("difficultyDaily") },
+  const modes: { key: GameMode; label: string }[] = [
+    { key: "classic", label: t("mobileModeClassic") },
+    { key: "noFlags", label: t("mobileModeNoFlags") },
+    { key: "timed", label: t("mobileModeTimed") },
+    { key: "daily", label: t("mobileModeDaily") },
   ];
   const statusText = status === "won" ? t("controlsYouWon") : status === "lost" ? t("controlsMineHit") : t("controlsPlaying");
+  const selectMode = (nextMode: GameMode) => {
+    onModeChange(nextMode);
+  };
 
   return (
     <div className="flex flex-col gap-4">
       <div className="rounded-xl p-1 grid grid-cols-2 gap-1" style={{ background: "var(--mm-surface-1)", border: "1px solid var(--mm-border)" }}>
-        {diffs.map(d => (
-          <button key={d.key} onClick={() => onDifficultyChange(d.key)} className="rounded-lg py-2 px-3 transition-all duration-200" style={{ background: difficulty === d.key ? "var(--mm-selected-bg)" : "transparent", color: difficulty === d.key ? "var(--mm-selected-fg)" : "var(--mm-text-3)", fontSize: "12px", fontWeight: difficulty === d.key ? 700 : 500, fontFamily: "var(--font-mabry)", border: difficulty === d.key ? "1px solid var(--mm-selected-border)" : "1px solid transparent" }}>
+        {modes.map(d => (
+          <button key={d.key} onClick={() => selectMode(d.key)} className="rounded-lg py-2 px-3 transition-all duration-200" style={{ background: mode === d.key ? "var(--mm-selected-bg)" : "transparent", color: mode === d.key ? "var(--mm-selected-fg)" : "var(--mm-text-3)", fontSize: "12px", fontWeight: mode === d.key ? 700 : 500, fontFamily: "var(--font-mabry)", border: mode === d.key ? "1px solid var(--mm-selected-border)" : "1px solid transparent" }}>
             {d.label}
             {d.key === "daily" && <FlashIcon size={10} color="currentColor" style={{ display: "inline", marginLeft: "4px", verticalAlign: "-1px" }} />}
           </button>
@@ -52,8 +58,7 @@ export function ControlPanel({ difficulty, onDifficultyChange, time, minesLeft, 
       </div>
 
       <div className="flex gap-3">
-        <StatBlock icon={<TargetDollarIcon size={13} color="var(--mm-blue)" />} label={t("controlsAccuracy")} value={`${accuracy}%`} color="var(--mm-blue)" />
-        <StatBlock icon={<FireIcon size={13} color="var(--mm-amber)" />} label={t("controlsStreak")} value="7" color="var(--mm-amber)" />
+        <StatBlock icon={<FireIcon size={13} color="var(--mm-amber)" />} label={mode === "timed" ? t("mobileTimedScore") : t("controlsStreak")} value={mode === "timed" ? `${timedMinesFound} / ${timedBest}` : "7"} color="var(--mm-amber)" />
       </div>
 
       {status !== "idle" && (
@@ -78,8 +83,8 @@ export function ControlPanel({ difficulty, onDifficultyChange, time, minesLeft, 
           <span style={{ color: "var(--mm-purple)", fontSize: "12px", fontWeight: 700 }}>{t("controlsUpgrade")}</span>
         </div>
         <p style={{ color: "var(--mm-text-3)", fontSize: "11px", lineHeight: 1.5, marginBottom: "10px" }}>{t("controlsUpgradeDesc")}</p>
-        <button className="w-full rounded-lg py-2 transition-all duration-200 hover:brightness-110" style={{ background: "var(--mm-purple)", color: "#fff", fontSize: "12px", fontWeight: 700, fontFamily: "var(--font-mabry)" }}>
-          <StarIcon size={12} color="#fff" style={{ display: "inline", marginRight: "6px" }} />
+        <button className="w-full rounded-lg py-2 inline-flex items-center justify-center gap-1.5 transition-all duration-200 hover:brightness-110" style={{ background: "var(--mm-purple)", color: "#fff", fontSize: "12px", fontWeight: 700, fontFamily: "var(--font-mabry)" }}>
+          <StarIcon size={12} color="#fff" aria-hidden="true" />
           {t("controlsGoPro")}
         </button>
       </div>

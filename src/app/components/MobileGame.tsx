@@ -1,13 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BombIcon, StopWatchIcon, ArrowReloadHorizontalIcon } from "hugeicons-react";
 import { ChevronDownIcon } from "lucide-react";
 import { MinesweeperBoard } from "./game/MinesweeperBoard";
 import { useGameLogic, Difficulty } from "./game/useGameLogic";
+import { applyTimedBoardClear, countCorrectFlags, TIMED_MODE_INITIAL_SECONDS } from "./game/gameRules.mjs";
 import { useT } from "../i18n/LocaleProvider";
 
 type MobileGameMode = "classic" | "noFlags" | "timed" | "daily";
-
-const MOBILE_TIMED_LIMIT_SECONDS = 90;
 
 const MOBILE_MODE_RATINGS: Record<MobileGameMode, number> = {
   classic: 1240,
@@ -20,10 +19,12 @@ export function MobileGame() {
   const t = useT();
   const [mode, setMode] = useState<MobileGameMode>("classic");
   const [modeMenuOpen, setModeMenuOpen] = useState(false);
+  const [timedSecondsLeft, setTimedSecondsLeft] = useState(TIMED_MODE_INITIAL_SECONDS);
+  const [timedMinesFound, setTimedMinesFound] = useState(0);
+  const [timedBest, setTimedBest] = useState(MOBILE_MODE_RATINGS.timed);
   const mobileDifficulty: Difficulty = mode === "daily" ? "daily" : "beginner";
-  const { board, status, time, timeRemaining, formatTime, minesLeft, revealCell, toggleFlag, resetGame } = useGameLogic(mobileDifficulty, {
+  const { board, status, time, formatTime, minesLeft, revealCell, toggleFlag, resetGame, endGame } = useGameLogic(mobileDifficulty, {
     allowFlags: mode !== "noFlags",
-    timeLimit: mode === "timed" ? MOBILE_TIMED_LIMIT_SECONDS : undefined,
   });
   const modeLabels: Record<MobileGameMode, string> = {
     classic: t("mobileModeClassic"),
@@ -31,12 +32,64 @@ export function MobileGame() {
     timed: t("mobileModeTimed"),
     daily: t("mobileModeDaily"),
   };
-  const timerText = mode === "timed" && timeRemaining !== undefined ? formatTime(timeRemaining) : formatTime(time);
+  const resetTimedRun = () => {
+    setTimedSecondsLeft(TIMED_MODE_INITIAL_SECONDS);
+    setTimedMinesFound(0);
+  };
+  const restartGame = () => {
+    resetGame();
+    resetTimedRun();
+  };
+  const selectMode = (nextMode: MobileGameMode) => {
+    setMode(nextMode);
+    setModeMenuOpen(false);
+    resetGame();
+    resetTimedRun();
+  };
+  const currentRating = mode === "timed" ? timedBest : MOBILE_MODE_RATINGS[mode];
+  const timerText = mode === "timed" ? formatTime(timedSecondsLeft) : formatTime(time);
   const resultText = status === "won"
     ? `${t("mobileClearedIn")} ${formatTime(time)}!`
-    : mode === "timed" && timeRemaining === 0
+    : mode === "timed" && timedSecondsLeft === 0
       ? t("mobileTimeUp")
       : t("mobileTryAgain");
+
+  useEffect(() => {
+    if (mode !== "timed" || status !== "playing") return;
+
+    const interval = window.setInterval(() => {
+      setTimedSecondsLeft(seconds => {
+        if (seconds <= 1) {
+          endGame();
+          setTimedBest(best => Math.max(best, timedMinesFound));
+          return 0;
+        }
+        return seconds - 1;
+      });
+    }, 1000);
+
+    return () => window.clearInterval(interval);
+  }, [endGame, mode, status, timedMinesFound]);
+
+  useEffect(() => {
+    if (mode !== "timed" || status !== "won") return;
+
+    const nextRun = applyTimedBoardClear({
+      secondsLeft: timedSecondsLeft,
+      minesFound: timedMinesFound,
+      correctFlags: countCorrectFlags(board),
+    });
+    setTimedSecondsLeft(nextRun.secondsLeft);
+    setTimedMinesFound(nextRun.minesFound);
+    setTimedBest(best => Math.max(best, nextRun.minesFound));
+    resetGame();
+  }, [board, mode, resetGame, status, timedMinesFound, timedSecondsLeft]);
+
+  useEffect(() => {
+    if (mode === "timed" && status === "lost") {
+      setTimedBest(best => Math.max(best, timedMinesFound));
+    }
+  }, [mode, status, timedMinesFound]);
 
   return (
     <div className="relative flex min-h-[100dvh] flex-col select-none overflow-hidden" style={{ background: "var(--mm-bg)", maxWidth: "430px", margin: "0 auto" }}>
@@ -96,10 +149,7 @@ export function MobileGame() {
                     type="button"
                     role="option"
                     aria-selected={mode === key}
-                    onClick={() => {
-                      setMode(key);
-                      setModeMenuOpen(false);
-                    }}
+                    onClick={() => selectMode(key)}
                     className="w-full px-3 py-2 text-left"
                     style={{
                       background: mode === key ? "var(--mm-amber-glow)" : "transparent",
@@ -117,7 +167,7 @@ export function MobileGame() {
           </div>
 
           <button
-            onClick={resetGame}
+            onClick={restartGame}
             aria-label={t("controlsNewGame")}
             className="h-9 w-9 rounded-xl flex items-center justify-center"
             style={{ background: "var(--mm-amber-glow)", border: "1px solid var(--mm-border-amber)" }}
@@ -130,8 +180,16 @@ export function MobileGame() {
       <div className="flex items-center justify-between px-4 py-2" style={{ background: "var(--mm-bg)", borderBottom: "1px solid var(--mm-border)" }}>
         <span style={{ color: "var(--mm-text-3)", fontSize: "11px", fontWeight: 700 }}>9 x 9</span>
         <span style={{ color: "var(--mm-text-2)", fontSize: "11px", fontWeight: 700 }}>{modeLabels[mode]}</span>
-        <span style={{ color: "var(--mm-amber)", fontSize: "11px", fontWeight: 800 }}>{t("mobileRating")} {MOBILE_MODE_RATINGS[mode]}</span>
+        <span style={{ color: "var(--mm-amber)", fontSize: "11px", fontWeight: 800 }}>
+          {t("mobileRating")} {mode === "timed" ? `${currentRating} mines` : currentRating}
+        </span>
       </div>
+      {mode === "timed" && (
+        <div className="flex items-center justify-center gap-3 px-4 py-2" style={{ background: "var(--mm-surface-1)", borderBottom: "1px solid var(--mm-border)" }}>
+          <span style={{ color: "var(--mm-text-2)", fontSize: "12px", fontWeight: 700 }}>{t("mobileTimedScore")} {timedMinesFound} mines</span>
+          <span style={{ color: "var(--mm-text-3)", fontSize: "12px" }}>+5s {t("mobileTimedBonus")}</span>
+        </div>
+      )}
 
       <div className="flex-1 grid place-items-center px-4 py-4 overflow-auto">
         <div className="w-full pb-[calc(88px+env(safe-area-inset-bottom))]">

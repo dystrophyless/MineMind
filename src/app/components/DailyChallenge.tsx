@@ -5,11 +5,11 @@ import { useGameLogic } from "./game/useGameLogic";
 import { useT } from "../i18n/LocaleProvider";
 
 const TOP_PLAYERS = [
-  { rank: 1, name: "NovakD", city: "Belgrade", time: "0:47", accuracy: 98 },
-  { rank: 2, name: "AliyaM", city: "Almaty", time: "0:52", accuracy: 96 },
-  { rank: 3, name: "KimJH", city: "Seoul", time: "0:58", accuracy: 95 },
-  { rank: 4, name: "MariaG", city: "Madrid", time: "1:02", accuracy: 94 },
-  { rank: 5, name: "AhmedK", city: "Cairo", time: "1:08", accuracy: 93 },
+  { rank: 1, name: "NovakD", city: "Belgrade", time: "0:47" },
+  { rank: 2, name: "AliyaM", city: "Almaty", time: "0:52" },
+  { rank: 3, name: "KimJH", city: "Seoul", time: "0:58" },
+  { rank: 4, name: "MariaG", city: "Madrid", time: "1:02" },
+  { rank: 5, name: "AhmedK", city: "Cairo", time: "1:08" },
 ];
 
 function RankMedal({ rank }: { rank: number }) {
@@ -21,7 +21,7 @@ function RankMedal({ rank }: { rank: number }) {
 
 export function DailyChallenge() {
   const t = useT();
-  const { board, status, revealCell, toggleFlag, time, formatTime, minesLeft, accuracy } = useGameLogic("daily");
+  const { board, status, revealCell, toggleFlag, time, formatTime, minesLeft } = useGameLogic("daily");
   const [attempted, setAttempted] = useState(false);
   const rules = [t("dailyRuleSame"), t("dailyRuleAttempts"), t("dailyRuleTimer"), t("dailyRuleNoAi")];
 
@@ -96,7 +96,7 @@ export function DailyChallenge() {
                   {status !== "idle" && status !== "playing" && (
                     <div className="w-full rounded-xl p-4 text-center" style={{ background: status === "won" ? "var(--mm-green-glow)" : "var(--mm-red-glow)", border: `1px solid ${status === "won" ? "rgba(76,217,123,0.3)" : "rgba(229,90,90,0.3)"}` }}>
                       <p style={{ color: status === "won" ? "var(--mm-green)" : "var(--mm-red)", fontSize: "16px", fontWeight: 700 }}>
-                        {status === "won" ? `${t("dailySolvedPrefix")} ${formatTime(time)}! ${t("dailySolvedAccuracy")} ${accuracy}%` : t("dailyMineHit")}
+                        {status === "won" ? `${t("dailySolvedPrefix")} ${formatTime(time)}!` : t("dailyMineHit")}
                       </p>
                     </div>
                   )}
@@ -121,7 +121,6 @@ export function DailyChallenge() {
                     </div>
                     <div className="text-right">
                       <p style={{ color: "var(--mm-amber)", fontSize: "13px", fontWeight: 700 }}>{p.time}</p>
-                      <p style={{ color: "var(--mm-text-3)", fontSize: "10px" }}>{p.accuracy}%</p>
                     </div>
                   </div>
                 ))}

@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { BrainIcon, CrownIcon, FlashIcon, PlayIcon, StarIcon } from "hugeicons-react";
+import { BrainIcon, CrownIcon, PlayIcon } from "hugeicons-react";
 import { CircleUserRound, Hexagon } from "lucide-react";
 import { useT } from "../i18n/LocaleProvider";
 import { SettingsControls } from "./SettingsControls";
@@ -17,17 +17,14 @@ export function NavBar({ currentPage, isAuthenticated, onNavigate }: Props) {
   const profileLabel = isAuthenticated ? t("mobileProfile") : t("navSignIn");
   const [hoveredPage, setHoveredPage] = useState<Page | null>(null);
   const [profileHovered, setProfileHovered] = useState(false);
-  const navItems: { page: Exclude<Page, "login" | "register">; label: string; icon: ReactNode }[] = [
-    { page: "daily", label: t("navDaily"), icon: <FlashIcon size={14} color="inherit" /> },
+  const navItems: { page: Exclude<Page, "login" | "register" | "daily" | "design">; label: string; icon: ReactNode }[] = [
+    { page: "game", label: t("mobilePlay"), icon: <PlayIcon size={14} color="inherit" /> },
     { page: "leaderboard", label: t("navLeaderboard"), icon: <CrownIcon size={14} color="inherit" /> },
     { page: "profile", label: t("navStats"), icon: <BrainIcon size={14} color="inherit" /> },
-    { page: "design", label: t("navPro"), icon: <StarIcon size={14} color="inherit" /> },
   ];
   const mobileNavItems: { page: Page; label: string; icon: ReactNode; isActive?: boolean }[] = [
     { page: "game", label: t("mobilePlay"), icon: <PlayIcon size={18} color="inherit" /> },
-    { page: "daily", label: t("navDaily"), icon: <FlashIcon size={18} color="inherit" /> },
     { page: "leaderboard", label: t("mobileRanks"), icon: <CrownIcon size={18} color="inherit" /> },
-    { page: "design", label: t("navPro"), icon: <StarIcon size={18} color="inherit" /> },
     {
       page: isAuthenticated ? "profile" : "login",
       label: profileLabel,
@@ -68,41 +65,12 @@ export function NavBar({ currentPage, isAuthenticated, onNavigate }: Props) {
             </span>
           </button>
 
-          <div className="flex items-center gap-1">
-            {navItems.map(item => {
-              const isActive = currentPage === item.page;
-              const isHovered = hoveredPage === item.page;
-
-              return (
-                <button
-                  key={item.page}
-                  onClick={() => onNavigate(item.page)}
-                  onMouseEnter={() => setHoveredPage(item.page)}
-                  onMouseLeave={() => setHoveredPage(null)}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg transition-all duration-200"
-                  style={{
-                    background: isActive ? "var(--mm-selected-bg)" : isHovered ? "var(--mm-nav-hover-bg)" : "transparent",
-                    color: isActive ? "var(--mm-selected-fg)" : isHovered ? "var(--mm-nav-hover-fg)" : "var(--mm-text-2)",
-                    fontSize: "13px",
-                    fontWeight: isActive ? 600 : 500,
-                    fontFamily: "var(--font-mabry)",
-                    border: isActive ? "1px solid var(--mm-selected-border)" : isHovered ? "1px solid var(--mm-nav-hover-border)" : "1px solid transparent",
-                  }}
-                >
-                  {item.icon}
-                  {item.label}
-                </button>
-              );
-            })}
-          </div>
-
           <div className="flex items-center gap-2">
-            <SettingsControls />
             <button
               onClick={() => onNavigate("login")}
               onMouseEnter={() => setProfileHovered(true)}
               onMouseLeave={() => setProfileHovered(false)}
-              aria-label={profileLabel}
+              aria-label={t("navSignIn")}
               className="h-9 rounded-lg flex items-center justify-start gap-2 px-3 transition-all duration-200 active:scale-95"
               style={{
                 background: profileHovered ? "var(--mm-nav-hover-bg)" : "var(--mm-nav-control-bg)",
@@ -113,8 +81,22 @@ export function NavBar({ currentPage, isAuthenticated, onNavigate }: Props) {
             >
               <CircleUserRound size={17} strokeWidth={2.2} />
               <span style={{ fontSize: "13px", fontWeight: 700, fontFamily: "var(--font-mabry)" }}>
-                {profileLabel}
+                {t("navSignIn")}
               </span>
+            </button>
+            <button
+              onClick={() => onNavigate("register")}
+              className="h-9 rounded-lg flex items-center justify-center px-3 transition-all duration-200 active:scale-95 hover:brightness-110"
+              style={{
+                background: "var(--mm-action-bg)",
+                border: "1px solid var(--mm-action-bg)",
+                color: "var(--mm-action-fg)",
+                fontSize: "13px",
+                fontWeight: 800,
+                fontFamily: "var(--font-mabry)",
+              }}
+            >
+              <span>{t("navSignUp")}</span>
             </button>
           </div>
         </nav>
@@ -163,7 +145,7 @@ export function NavBar({ currentPage, isAuthenticated, onNavigate }: Props) {
                 boxShadow: "var(--mm-nav-control-shadow)",
               }}
             >
-              Log In
+              {t("navSignIn")}
             </button>
             <button
               onClick={() => onNavigate("register")}
@@ -177,7 +159,7 @@ export function NavBar({ currentPage, isAuthenticated, onNavigate }: Props) {
                 fontFamily: "var(--font-mabry)",
               }}
             >
-              Sign Up
+              {t("navSignUp")}
             </button>
           </div>
         </nav>

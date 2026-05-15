@@ -36,10 +36,9 @@ export function ProfileStats() {
   const stats = [
     { label: t("landingWinRate"), value: "82%", icon: <ChartUpIcon size={16} color="var(--mm-green)" />, color: "var(--mm-green)", change: t("profileThisWeek") },
     { label: t("profileGamesPlayed"), value: "1,247", icon: <BrainIcon size={16} color="var(--mm-blue)" />, color: "var(--mm-blue)", change: t("profileToday") },
-    { label: t("landingBestTime"), value: "1:24", icon: <StopWatchIcon size={16} color="var(--mm-amber)" />, color: "var(--mm-amber)", change: t("difficultyBeginner") },
-    { label: t("profileAvgAccuracy"), value: "94%", icon: <StarIcon size={16} color="var(--mm-purple)" />, color: "var(--mm-purple)", change: t("profileTopPercent") },
+    { label: t("landingBestTime"), value: "1:24", icon: <StopWatchIcon size={16} color="var(--mm-amber)" />, color: "var(--mm-amber)", change: t("mobileModeClassic") },
+    { label: t("profileFavMode"), value: t("mobileModeTimed"), icon: <BombIcon size={16} color="var(--mm-purple)" />, color: "var(--mm-purple)", change: t("profileOfGames") },
     { label: t("profileCurrentStreak"), value: "7", icon: <FireIcon size={16} color="var(--mm-red)" />, color: "var(--mm-red)", change: t("profilePersonalBest") },
-    { label: t("profileFavDifficulty"), value: t("difficultyAdvanced"), icon: <BombIcon size={16} color="var(--mm-text-2)" />, color: "var(--mm-text-2)", change: t("profileOfGames") },
   ];
   const badges: { name: TranslationKey; desc: TranslationKey; icon: ReactNode; unlocked: boolean }[] = [
     { name: "profileBadgeSpeed", desc: "profileBadgeSpeedDesc", icon: <FlashIcon size={24} color="var(--mm-amber)" />, unlocked: true },
@@ -49,12 +48,12 @@ export function ProfileStats() {
     { name: "profileBadgeGrandmaster", desc: "profileBadgeGrandmasterDesc", icon: <CrownIcon size={24} color="var(--mm-amber)" />, unlocked: false },
     { name: "profileBadgeScholar", desc: "profileBadgeScholarDesc", icon: <BrainIcon size={24} color="var(--mm-amber)" />, unlocked: false },
   ];
-  const recentGames: { diff: string; time: string; accuracy: number; result: RecentGameResult; date: string }[] = [
-    { diff: t("difficultyAdvanced"), time: "2:14", accuracy: 96, result: "won", date: t("profileDateToday") },
-    { diff: t("difficultyAdvanced"), time: "1:58", accuracy: 98, result: "won", date: t("profileDateToday") },
-    { diff: t("difficultyExpert"), time: "-", accuracy: 72, result: "lost", date: t("profileDateToday") },
-    { diff: t("difficultyBeginner"), time: "1:24", accuracy: 100, result: "won", date: t("profileDateYesterday") },
-    { diff: t("difficultyAdvanced"), time: "2:37", accuracy: 95, result: "won", date: t("profileDateYesterday") },
+  const recentGames: { mode: string; time: string; result: RecentGameResult; date: string }[] = [
+    { mode: t("mobileModeTimed"), time: "2:14", result: "won", date: t("profileDateToday") },
+    { mode: t("mobileModeNoFlags"), time: "1:58", result: "won", date: t("profileDateToday") },
+    { mode: t("mobileModeDaily"), time: "-", result: "lost", date: t("profileDateToday") },
+    { mode: t("mobileModeClassic"), time: "1:24", result: "won", date: t("profileDateYesterday") },
+    { mode: t("mobileModeTimed"), time: "2:37", result: "won", date: t("profileDateYesterday") },
   ];
 
   return (
@@ -99,12 +98,13 @@ export function ProfileStats() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <div className="rounded-2xl p-5" style={{ background: "var(--mm-surface-1)", border: "1px solid var(--mm-border)" }}>
-            <p style={{ color: "var(--mm-text)", fontSize: "14px", fontWeight: 700, marginBottom: "16px" }}>{t("profileWinRateByDifficulty")}</p>
+            <p style={{ color: "var(--mm-text)", fontSize: "14px", fontWeight: 700, marginBottom: "16px" }}>{t("profileWinRateByMode")}</p>
             <div className="flex flex-col gap-4">
               {[
-                { label: t("difficultyBeginner"), rate: 96, color: "var(--mm-green)", games: 480 },
-                { label: t("difficultyAdvanced"), rate: 82, color: "var(--mm-amber)", games: 620 },
-                { label: t("difficultyExpert"), rate: 41, color: "var(--mm-red)", games: 147 },
+                { label: t("mobileModeClassic"), rate: 88, color: "var(--mm-green)", games: 480 },
+                { label: t("mobileModeNoFlags"), rate: 76, color: "var(--mm-blue)", games: 216 },
+                { label: t("mobileModeTimed"), rate: 64, color: "var(--mm-amber)", games: 620 },
+                { label: t("mobileModeDaily"), rate: 58, color: "var(--mm-red)", games: 147 },
               ].map(d => (
                 <div key={d.label}>
                   <div className="flex justify-between mb-1.5">
@@ -126,9 +126,8 @@ export function ProfileStats() {
               {recentGames.map((g, i) => (
                 <div key={i} className="flex items-center gap-3 rounded-xl px-3 py-2.5" style={{ background: "var(--mm-surface-2)", border: "1px solid var(--mm-border)" }}>
                   <div className="w-2 h-2 rounded-full shrink-0" style={{ background: g.result === "won" ? "var(--mm-green)" : "var(--mm-red)" }} />
-                  <span style={{ color: "var(--mm-text-2)", fontSize: "12px", flex: 1 }}>{g.diff}</span>
+                  <span style={{ color: "var(--mm-text-2)", fontSize: "12px", flex: 1 }}>{g.mode}</span>
                   <span style={{ color: "var(--mm-amber)", fontSize: "12px", fontWeight: 700 }}>{g.time}</span>
-                  <span style={{ color: "var(--mm-blue)", fontSize: "12px" }}>{g.accuracy}%</span>
                   <span style={{ color: "var(--mm-text-3)", fontSize: "11px" }}>{g.date}</span>
                 </div>
               ))}

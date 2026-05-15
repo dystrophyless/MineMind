@@ -26,11 +26,18 @@ export default function App() {
   const [page, setPage] = useState<Page>("landing");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const isMobile = useIsMobile();
-  const showMobileGuestHome = isMobile && !isAuthenticated && page !== "login" && page !== "register";
-  const visiblePage = showMobileGuestHome ? "landing" : page;
+  const authRequiredPages = new Set<Page>(["game", "daily", "leaderboard", "profile", "design"]);
+  const showGuestLanding = !isAuthenticated && authRequiredPages.has(page);
+  const visiblePage = showGuestLanding ? "landing" : page;
   const contentInsetClass = !isAuthenticated ? "pt-[64px] md:pt-0" : visiblePage === "game" ? "pb-0 md:pb-0" : "pb-[76px] md:pb-0";
 
   const navigate = (p: Page) => {
+    if (!isAuthenticated && authRequiredPages.has(p)) {
+      setPage("login");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
     setPage(p);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };

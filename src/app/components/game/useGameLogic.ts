@@ -110,9 +110,7 @@ export function useGameLogic(difficulty: Difficulty, options: GameLogicOptions =
   const [status, setStatus] = useState<GameStatus>("idle");
   const [time, setTime] = useState(0);
   const [flagCount, setFlagCount] = useState(0);
-  const [accuracy, setAccuracy] = useState(100);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const clicksRef = useRef({ total: 0, correct: 0 });
 
   const resetGame = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -120,9 +118,13 @@ export function useGameLogic(difficulty: Difficulty, options: GameLogicOptions =
     setStatus("idle");
     setTime(0);
     setFlagCount(0);
-    setAccuracy(100);
-    clicksRef.current = { total: 0, correct: 0 };
   }, [config.rows, config.cols]);
+
+  const endGame = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    setBoard(prev => prev.map(row => row.map(cell => cell.isMine ? { ...cell, isRevealed: true } : cell)));
+    setStatus("lost");
+  }, []);
 
   useEffect(() => {
     resetGame();
@@ -134,8 +136,7 @@ export function useGameLogic(difficulty: Difficulty, options: GameLogicOptions =
         setTime(t => {
           const next = t + 1;
           if (timeLimit !== undefined && next >= timeLimit) {
-            setBoard(prev => prev.map(row => row.map(cell => cell.isMine ? { ...cell, isRevealed: true } : cell)));
-            setStatus("lost");
+            endGame();
             return timeLimit;
           }
           return next;
@@ -145,7 +146,7 @@ export function useGameLogic(difficulty: Difficulty, options: GameLogicOptions =
       if (timerRef.current) clearInterval(timerRef.current);
     }
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [status, timeLimit]);
+  }, [endGame, status, timeLimit]);
 
   const revealCell = useCallback((row: number, col: number) => {
     setBoard(prev => {
@@ -160,7 +161,6 @@ export function useGameLogic(difficulty: Difficulty, options: GameLogicOptions =
       }
 
       const targetCell = currentBoard[row][col];
-      clicksRef.current.total++;
 
       if (targetCell.isMine) {
         const newBoard = currentBoard.map(r => r.map(c => ({ ...c, isRevealed: c.isMine || c.isRevealed })));
@@ -168,16 +168,12 @@ export function useGameLogic(difficulty: Difficulty, options: GameLogicOptions =
         setStatus("lost");
         return newBoard;
       } else {
-        clicksRef.current.correct++;
         const newBoard = revealCells(currentBoard, row, col, config.rows, config.cols);
         const revealedSafe = newBoard.flat().filter(c => c.isRevealed && !c.isMine).length;
         const totalSafe = config.rows * config.cols - config.mines;
 
         if (revealedSafe === totalSafe) {
           setStatus("won");
-        }
-        if (clicksRef.current.total > 0) {
-          setAccuracy(Math.round((clicksRef.current.correct / clicksRef.current.total) * 100));
         }
         return newBoard;
       }
@@ -200,5 +196,5 @@ export function useGameLogic(difficulty: Difficulty, options: GameLogicOptions =
   const formatTime = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
   const timeRemaining = timeLimit !== undefined ? Math.max(timeLimit - time, 0) : undefined;
 
-  return { board, status, time, timeRemaining, formatTime, minesLeft, accuracy, revealCell, toggleFlag, resetGame, config };
+  return { board, status, time, timeRemaining, formatTime, minesLeft, revealCell, toggleFlag, resetGame, endGame, config };
 }
