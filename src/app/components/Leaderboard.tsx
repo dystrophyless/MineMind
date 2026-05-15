@@ -34,6 +34,7 @@ function RankIcon({ rank }: { rank: number }) {
 export function Leaderboard() {
   const t = useT();
   const [tab, setTab] = useState<Tab>("global");
+  const [hoveredTab, setHoveredTab] = useState<Tab | null>(null);
   const rows = tab === "global" ? GLOBAL_PLAYERS : tab === "city" ? ALMATY_PLAYERS : GLOBAL_PLAYERS.slice(0, 5);
   const tabLabels: Record<Tab, string> = {
     global: t("leaderboardGlobal"),
@@ -64,11 +65,30 @@ export function Leaderboard() {
         </div>
 
         <div className="flex gap-1 rounded-xl p-1 mb-6" style={{ background: "var(--mm-surface-1)", border: "1px solid var(--mm-border)", width: "fit-content" }}>
-          {(["global", "city", "daily"] as Tab[]).map(item => (
-            <button key={item} onClick={() => setTab(item)} className="rounded-lg px-5 py-2 transition-all duration-200" style={{ background: tab === item ? "var(--mm-selected-bg)" : "transparent", color: tab === item ? "var(--mm-selected-fg)" : "var(--mm-text-2)", fontSize: "13px", fontWeight: tab === item ? 700 : 500, fontFamily: "var(--font-mabry)", border: tab === item ? "1px solid var(--mm-selected-border)" : "1px solid transparent", boxShadow: tab === item ? "var(--mm-selected-shadow)" : "none" }}>
-              {tabLabels[item]}
-            </button>
-          ))}
+          {(["global", "city", "daily"] as Tab[]).map(item => {
+            const isActive = tab === item;
+            const isHovered = hoveredTab === item;
+
+            return (
+              <button
+                key={item}
+                onClick={() => setTab(item)}
+                onMouseEnter={() => setHoveredTab(item)}
+                onMouseLeave={() => setHoveredTab(null)}
+                className="rounded-lg px-5 py-2 transition-all duration-200"
+                style={{
+                  background: isActive ? "var(--mm-selected-bg)" : isHovered ? "var(--mm-nav-hover-bg)" : "transparent",
+                  color: isActive ? "var(--mm-selected-fg)" : isHovered ? "var(--mm-nav-hover-fg)" : "var(--mm-text-2)",
+                  fontSize: "13px",
+                  fontWeight: isActive ? 700 : 500,
+                  fontFamily: "var(--font-mabry)",
+                  border: isActive ? "1px solid var(--mm-selected-border)" : isHovered ? "1px solid var(--mm-nav-hover-border)" : "1px solid transparent",
+                }}
+              >
+                {tabLabels[item]}
+              </button>
+            );
+          })}
         </div>
 
         <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--mm-border)" }}>

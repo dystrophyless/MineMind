@@ -1,4 +1,4 @@
-import { BrainIcon, StarIcon, StopWatchIcon, FireIcon, ChartUpIcon, DiamondIcon, CrownIcon, BombIcon, FlashIcon } from "hugeicons-react";
+import { BrainIcon, StarIcon, StopWatchIcon, FireIcon, ChartUpIcon, CrownIcon, BombIcon, FlashIcon } from "hugeicons-react";
 import { useT } from "../i18n/LocaleProvider";
 import type { ReactNode } from "react";
 import type { TranslationKey } from "../i18n/translations";
@@ -9,6 +9,24 @@ function ProgressBar({ value, max, color }: { value: number; max: number; color:
   return (
     <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "var(--mm-surface-3)" }}>
       <div className="h-full rounded-full transition-all duration-700" style={{ width: `${(value / max) * 100}%`, background: color, boxShadow: `0 0 8px ${color}50` }} />
+    </div>
+  );
+}
+
+function ProfileRankBadge({ children, icon, tone }: { children: ReactNode; icon?: ReactNode; tone: "global" | "city" }) {
+  const isGlobal = tone === "global";
+
+  return (
+    <div
+      className="h-8 rounded-full px-3 flex items-center gap-1.5 shrink-0"
+      style={{
+        background: isGlobal ? "var(--mm-pro-badge-bg)" : "var(--mm-nav-control-bg)",
+        border: `1px solid ${isGlobal ? "var(--mm-pro-badge-border)" : "var(--mm-nav-control-border)"}`,
+        color: isGlobal ? "var(--mm-pro-badge-fg)" : "var(--mm-text-2)",
+      }}
+    >
+      {icon}
+      <span style={{ fontSize: "12px", fontWeight: isGlobal ? 800 : 700, lineHeight: 1 }}>{children}</span>
     </div>
   );
 }
@@ -43,23 +61,17 @@ export function ProfileStats() {
     <div className="min-h-screen" style={{ background: "var(--mm-bg)" }}>
       <div className="max-w-5xl mx-auto px-4 py-8">
         <div className="rounded-2xl p-6 mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-5" style={{ background: "var(--mm-surface-1)", border: "1px solid var(--mm-border)" }}>
-          <div className="w-20 h-20 rounded-2xl flex items-center justify-center shrink-0 relative" style={{ background: "var(--mm-action-bg)", boxShadow: "var(--mm-action-shadow)" }}>
+          <div className="w-20 h-20 rounded-2xl flex items-center justify-center shrink-0" style={{ background: "var(--mm-action-bg)", boxShadow: "var(--mm-action-shadow)" }}>
             <span style={{ color: "var(--mm-action-fg)", fontSize: "32px", fontWeight: 800 }}>Y</span>
-            <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: "var(--mm-purple)", border: "2px solid var(--mm-bg)" }}>
-              <DiamondIcon size={10} color="#fff" />
-            </div>
           </div>
 
           <div className="flex-1">
-            <div className="flex items-center gap-3 mb-1 flex-wrap">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
               <h1 style={{ color: "var(--mm-text)", fontSize: "24px", fontWeight: 800 }}>{t("leaderboardYou")}</h1>
-              <div className="px-2.5 py-1 rounded-lg flex items-center gap-1.5" style={{ background: "var(--mm-amber-glow)", border: "1px solid var(--mm-border-amber)" }}>
-                <CrownIcon size={11} color="var(--mm-amber)" />
-                <span style={{ color: "var(--mm-amber)", fontSize: "11px", fontWeight: 700 }}>#247 {t("leaderboardGlobal")}</span>
-              </div>
-              <div className="px-2.5 py-1 rounded-lg" style={{ background: "var(--mm-surface-3)", border: "1px solid var(--mm-border)" }}>
-                <span style={{ color: "var(--mm-text-2)", fontSize: "11px" }}>#12 Almaty</span>
-              </div>
+              <ProfileRankBadge tone="global" icon={<CrownIcon size={12} color="currentColor" />}>
+                #247 {t("leaderboardGlobal")}
+              </ProfileRankBadge>
+              <ProfileRankBadge tone="city">#12 in Almaty</ProfileRankBadge>
             </div>
             <p style={{ color: "var(--mm-text-2)", fontSize: "13px", marginBottom: "12px" }}>{t("profileMemberSince")}</p>
             <div>
