@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
 const ROOT = dirname(fileURLToPath(new URL("../package.json", import.meta.url)));
 const SRC = join(ROOT, "src");
+const PUBLIC = join(ROOT, "public");
 const THEME_CSS = join(SRC, "styles", "theme.css");
 const NAV_BAR = join(SRC, "app", "components", "NavBar.tsx");
 const LANDING_PAGE = join(SRC, "app", "components", "LandingPage.tsx");
@@ -84,14 +85,21 @@ test("landing cta uses the same max-width rhythm as other landing sections", () 
   assert.doesNotMatch(landingPage, /<section className="mx-6 mb-20 rounded-3xl/);
 });
 
-test("landing hero uses brain board illustration instead of mini grid", () => {
+test("landing hero uses downloaded theme-aware brain artwork instead of mini grid", () => {
   const landingPage = readFileSync(LANDING_PAGE, "utf8");
+  const darkImage = join(PUBLIC, "images", "landing-brain-dark.png");
+  const lightImage = join(PUBLIC, "images", "landing-brain-light.png");
 
-  assert.match(landingPage, /function BrainBoardIllustration/);
-  assert.match(landingPage, /BRAIN_CELLS/);
-  assert.match(landingPage, /aria-label="Minesweeper brain illustration"/);
+  assert.ok(existsSync(darkImage), "Dark landing brain image should be copied into public assets");
+  assert.ok(existsSync(lightImage), "Light landing brain image should be copied into public assets");
+  assert.match(landingPage, /LANDING_BRAIN_IMAGES/);
+  assert.match(landingPage, /useThemeMode/);
+  assert.match(landingPage, /src=\{LANDING_BRAIN_IMAGES\[theme\]\}/);
+  assert.match(landingPage, /alt="Minesweeper brain board illustration"/);
   assert.doesNotMatch(landingPage, /MINI_BOARD/);
   assert.doesNotMatch(landingPage, /function MiniCell/);
+  assert.doesNotMatch(landingPage, /function BrainBoardIllustration/);
+  assert.doesNotMatch(landingPage, /BRAIN_CELLS/);
   assert.doesNotMatch(landingPage, /gridTemplateColumns:\s*"repeat\(5, 1fr\)"/);
 });
 

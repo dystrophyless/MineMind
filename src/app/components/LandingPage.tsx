@@ -1,122 +1,33 @@
-import { BrainIcon, FlashIcon, CrownIcon, StarIcon, ArrowRightBigIcon, ChartUpIcon, RacingFlagIcon, BombIcon } from "hugeicons-react";
+import { BrainIcon, FlashIcon, CrownIcon, StarIcon, ArrowRightBigIcon, ChartUpIcon } from "hugeicons-react";
 import { useT } from "../i18n/LocaleProvider";
+import { useThemeMode } from "../theme/ThemeProvider";
 
 type Props = {
   onPlay: () => void;
   onDaily: () => void;
 };
 
-type BrainCellKind = "blank" | "number" | "flag" | "mine" | "safe";
-
-type BrainCellSpec = {
-  kind: BrainCellKind;
-  left: string;
-  top: string;
-  size: string;
-  value?: "1" | "2";
-  rotate?: number;
+const LANDING_BRAIN_IMAGES = {
+  black: "/images/landing-brain-dark.png",
+  white: "/images/landing-brain-light.png",
 };
 
-const BRAIN_CELLS: BrainCellSpec[] = [
-  { kind: "blank", left: "7%", top: "37%", size: "14%" },
-  { kind: "flag", left: "22%", top: "27%", size: "14%" },
-  { kind: "number", value: "1", left: "36%", top: "14%", size: "15%" },
-  { kind: "blank", left: "50%", top: "10%", size: "14%" },
-  { kind: "number", value: "2", left: "65%", top: "16%", size: "15%" },
-  { kind: "number", value: "1", left: "13%", top: "49%", size: "14%" },
-  { kind: "number", value: "2", left: "27%", top: "44%", size: "14%" },
-  { kind: "number", value: "1", left: "41%", top: "45%", size: "14%" },
-  { kind: "mine", left: "53%", top: "42%", size: "15%" },
-  { kind: "number", value: "2", left: "68%", top: "44%", size: "14%" },
-  { kind: "number", value: "1", left: "82%", top: "47%", size: "14%" },
-  { kind: "flag", left: "88%", top: "58%", size: "13%" },
-  { kind: "flag", left: "31%", top: "62%", size: "14%" },
-  { kind: "number", value: "2", left: "54%", top: "62%", size: "14%" },
-  { kind: "number", value: "1", left: "67%", top: "62%", size: "14%" },
-  { kind: "safe", left: "76%", top: "28%", size: "16%" },
-  { kind: "flag", left: "61%", top: "78%", size: "14%" },
-  { kind: "blank", left: "74%", top: "77%", size: "13%" },
-];
-
-function BrainTile({ cell }: { cell: BrainCellSpec }) {
-  const isNumber = cell.kind === "number";
-  const contentColor = cell.kind === "mine" ? "var(--mm-red)" : cell.kind === "safe" || cell.value === "2" ? "var(--mm-green)" : cell.kind === "flag" ? "var(--mm-amber)" : "var(--mm-blue)";
-  const background = cell.kind === "mine" ? "var(--mm-cell-mine-bg)" : cell.kind === "safe" ? "var(--mm-cell-safe-bg)" : cell.kind === "flag" ? "var(--mm-cell-flag-bg)" : isNumber ? "var(--mm-cell-open-bg)" : "var(--mm-cell-closed-bg)";
-  const border = cell.kind === "mine" ? "rgba(229,90,90,0.42)" : cell.kind === "safe" ? "var(--mm-green)" : cell.kind === "flag" ? "var(--mm-border-amber)" : "var(--mm-border-2)";
+function LandingBrainImage() {
+  const { theme } = useThemeMode();
 
   return (
-    <div
-      className="absolute rounded-2xl flex items-center justify-center"
+    <img
+      src={LANDING_BRAIN_IMAGES[theme]}
+      alt="Minesweeper brain board illustration"
+      className="w-full max-w-[560px] mx-auto"
+      loading="eager"
+      decoding="async"
       style={{
-        left: cell.left,
-        top: cell.top,
-        width: cell.size,
-        aspectRatio: "1 / 1",
-        transform: `rotate(${cell.rotate ?? 0}deg)`,
-        background,
-        border: `1px solid ${border}`,
-        boxShadow: cell.kind === "safe" ? "0 0 0 1px rgba(76,217,123,0.22), 0 14px 28px rgba(76,217,123,0.16)" : "var(--cell-closed-shadow)",
+        display: "block",
+        objectFit: "contain",
+        filter: "drop-shadow(0 22px 42px rgba(0,0,0,0.20))",
       }}
-    >
-      {isNumber && <span style={{ color: contentColor, fontSize: "clamp(18px, 4vw, 34px)", fontWeight: 800 }}>{cell.value}</span>}
-      {cell.kind === "flag" && <RacingFlagIcon size={28} color={contentColor} />}
-      {cell.kind === "mine" && <BombIcon size={32} color={contentColor} />}
-      {cell.kind === "safe" && <span style={{ color: contentColor, fontSize: "clamp(26px, 5vw, 42px)", fontWeight: 900 }}>✓</span>}
-    </div>
-  );
-}
-
-function BrainBoardIllustration() {
-  const lobes = [
-    { left: "0%", top: "31%", width: "28%", height: "34%", radius: "38% 28% 34% 46%" },
-    { left: "16%", top: "14%", width: "34%", height: "34%", radius: "44% 34% 30% 30%" },
-    { left: "40%", top: "8%", width: "34%", height: "35%", radius: "30% 44% 34% 30%" },
-    { left: "62%", top: "23%", width: "33%", height: "38%", radius: "34% 46% 36% 30%" },
-    { left: "20%", top: "52%", width: "35%", height: "34%", radius: "30% 30% 44% 40%" },
-    { left: "45%", top: "52%", width: "38%", height: "39%", radius: "28% 32% 44% 48%" },
-    { left: "59%", top: "80%", width: "17%", height: "18%", radius: "28% 34% 48% 48%" },
-  ];
-
-  return (
-    <div className="relative w-full max-w-[540px] aspect-[1.18] mx-auto" aria-label="Minesweeper brain illustration" role="img">
-      {lobes.map((lobe, index) => (
-        <div
-          key={index}
-          className="absolute"
-          style={{
-            left: lobe.left,
-            top: lobe.top,
-            width: lobe.width,
-            height: lobe.height,
-            borderRadius: lobe.radius,
-            background: "var(--mm-board-bg)",
-            border: "1px solid var(--mm-border-2)",
-            boxShadow: "var(--mm-board-shadow)",
-          }}
-        />
-      ))}
-
-      <div className="absolute left-[8%] right-[8%] top-[22%] bottom-[16%]" style={{ borderRadius: "34%", background: "var(--mm-board-bg)", border: "1px solid var(--mm-border)", boxShadow: "var(--mm-card-shadow)" }} />
-
-      {BRAIN_CELLS.map((cell, index) => (
-        <BrainTile key={index} cell={cell} />
-      ))}
-
-      {[18, 38, 58, 78].map((left, index) => (
-        <span
-          key={left}
-          className="absolute rounded-full"
-          style={{
-            left: `${left}%`,
-            top: `${index % 2 === 0 ? 35 : 68}%`,
-            width: "6px",
-            height: "6px",
-            background: index % 2 === 0 ? "var(--mm-blue)" : "var(--mm-amber)",
-            boxShadow: "0 0 10px currentColor",
-          }}
-        />
-      ))}
-    </div>
+    />
   );
 }
 
@@ -179,7 +90,7 @@ export function LandingPage({ onPlay, onDaily }: Props) {
           </div>
 
           <div className="flex-1 flex flex-col items-center gap-6 w-full max-w-xl">
-            <BrainBoardIllustration />
+            <LandingBrainImage />
 
             <div className="w-full rounded-2xl p-4" style={{ background: "var(--mm-surface-1)", border: "1px solid var(--mm-border)" }}>
               <div className="flex items-center justify-between mb-3">
