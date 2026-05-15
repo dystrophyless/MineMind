@@ -3,6 +3,7 @@ import { useT } from "../i18n/LocaleProvider";
 import type { ReactNode } from "react";
 import type { TranslationKey } from "../i18n/translations";
 import { useProfileStats } from "../hooks/useProfileStats";
+import { SettingsControls } from "./SettingsControls";
 
 type RecentGameResult = "won" | "lost";
 
@@ -92,6 +93,10 @@ export function ProfileStats() {
   return (
     <div className="min-h-screen" style={{ background: "var(--mm-bg)" }}>
       <div className="max-w-5xl mx-auto px-4 py-8">
+        <div className="flex justify-end mb-3 md:hidden">
+          <SettingsControls compact />
+        </div>
+
         <div className="rounded-2xl p-6 mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-5" style={{ background: "var(--mm-surface-1)", border: "1px solid var(--mm-border)" }}>
           <div className="w-20 h-20 rounded-2xl flex items-center justify-center shrink-0" style={{ background: "var(--mm-action-bg)", boxShadow: "var(--mm-action-shadow)" }}>
             <span style={{ color: "var(--mm-action-fg)", fontSize: "32px", fontWeight: 800 }}>{profileData.avatarInitial}</span>
