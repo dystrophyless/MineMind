@@ -28,20 +28,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(session?.user ?? null);
       setIsLoading(false);
 
-      if (session?.user) {
+      const oauthUser = session?.user;
+      const isOAuth = oauthUser?.app_metadata?.provider !== "email";
+      if (oauthUser && isOAuth) {
         supabase
           .from("user_profiles")
           .select("user_id")
-          .eq("user_id", session.user.id)
+          .eq("user_id", oauthUser.id)
           .maybeSingle()
           .then(({ data: existing }) => {
             if (!existing) {
-              const base = (session.user.email?.split("@")[0] ?? "player")
+              const base = (oauthUser.email?.split("@")[0] ?? "player")
                 .replace(/[^a-zA-Z0-9_]/g, "_")
                 .slice(0, 14);
-              const username = `${base}_${session.user.id.slice(0, 5)}`;
+              const username = `${base}_${oauthUser.id.slice(0, 5)}`;
               supabase.from("user_profiles").insert({
-                user_id: session.user.id,
+                user_id: oauthUser.id,
                 username,
                 member_since: new Date().toISOString(),
               });
