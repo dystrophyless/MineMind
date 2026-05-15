@@ -10,13 +10,6 @@ import { useT } from "../i18n/LocaleProvider";
 
 type MobileGameMode = "classic" | "noFlags" | "timed" | "daily";
 
-const MOBILE_MODE_RATINGS: Record<MobileGameMode, number> = {
-  classic: 1240,
-  noFlags: 1180,
-  timed: 1310,
-  daily: 1275,
-};
-
 export function MobileGame() {
   const t = useT();
   const { user } = useAuth();
@@ -25,7 +18,8 @@ export function MobileGame() {
   const [modeMenuOpen, setModeMenuOpen] = useState(false);
   const [timedSecondsLeft, setTimedSecondsLeft] = useState(TIMED_MODE_INITIAL_SECONDS);
   const [timedMinesFound, setTimedMinesFound] = useState(0);
-  const [timedBest, setTimedBest] = useState(MOBILE_MODE_RATINGS.timed);
+  const [timedBest, setTimedBest] = useState(0);
+  const [bestTime, setBestTime] = useState<number | null>(null);
   const mobileDifficulty: Difficulty = mode === "daily" ? "daily" : "beginner";
   const { board, status, time, formatTime, minesLeft, revealCell, toggleFlag, resetGame, endGame } = useGameLogic(mobileDifficulty, {
     allowFlags: mode !== "noFlags",
@@ -50,13 +44,42 @@ export function MobileGame() {
     resetGame();
     resetTimedRun();
   };
-  const currentRating = mode === "timed" ? timedBest : MOBILE_MODE_RATINGS[mode];
   const timerText = mode === "timed" ? formatTime(timedSecondsLeft) : formatTime(time);
   const resultText = status === "won"
     ? `${t("mobileClearedIn")} ${formatTime(time)}!`
     : mode === "timed" && timedSecondsLeft === 0
       ? t("mobileTimeUp")
       : t("mobileTryAgain");
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("game_attempts")
+      .select("mines_found")
+      .eq("user_id", user.id)
+      .eq("mode", "timed")
+      .not("mines_found", "is", null)
+      .order("mines_found", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => { if (data?.mines_found) setTimedBest(data.mines_found); });
+  }, [user]);
+
+  useEffect(() => {
+    setBestTime(null);
+    if (!user || mode === "timed") return;
+    supabase
+      .from("game_attempts")
+      .select("time_seconds")
+      .eq("user_id", user.id)
+      .eq("mode", mode)
+      .eq("status", "won")
+      .not("time_seconds", "is", null)
+      .order("time_seconds", { ascending: true })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => setBestTime(data?.time_seconds ?? null));
+  }, [user, mode]);
 
   useEffect(() => {
     if (mode !== "timed" || status !== "playing") return;
@@ -122,6 +145,10 @@ export function MobileGame() {
     supabase.from("game_attempts").insert(attempt).then(({ error }) => {
       if (error) console.error("Failed to save game attempt:", error.message);
     });
+
+    if (status === "won" && mode !== "timed" && mode !== "daily") {
+      setBestTime(prev => prev === null || time < prev ? time : prev);
+    }
   }, [status, mode, user, time, timedMinesFound]);
 
   return (
@@ -214,7 +241,11 @@ export function MobileGame() {
         <span style={{ color: "var(--mm-text-3)", fontSize: "11px", fontWeight: 700 }}>9 x 9</span>
         <span style={{ color: "var(--mm-text-2)", fontSize: "11px", fontWeight: 700 }}>{modeLabels[mode]}</span>
         <span style={{ color: "var(--mm-amber)", fontSize: "11px", fontWeight: 800 }}>
-          {t("mobileRating")} {mode === "timed" ? `${currentRating} mines` : currentRating}
+          {mode === "timed"
+            ? `${t("tableBest")} ${timedBest} mines`
+            : bestTime !== null
+              ? `${t("tableBest")} ${formatTime(Math.round(bestTime))}`
+              : `${t("tableBest")} —`}
         </span>
       </div>
       {mode === "timed" && (
