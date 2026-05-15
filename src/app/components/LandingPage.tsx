@@ -12,6 +12,11 @@ const LANDING_BRAIN_IMAGES = {
   white: "/images/landing-brain-light.png",
 };
 
+const LANDING_BRAIN_IMAGE_SCALE = {
+  black: 1,
+  white: 0.94,
+};
+
 function LandingBrainImage() {
   const { theme } = useThemeMode();
 
@@ -25,6 +30,10 @@ function LandingBrainImage() {
       style={{
         display: "block",
         objectFit: "contain",
+        marginTop: "-48px",
+        marginBottom: "-64px",
+        transform: `scale(${LANDING_BRAIN_IMAGE_SCALE[theme]})`,
+        transformOrigin: "center",
         filter: "drop-shadow(0 22px 42px rgba(0,0,0,0.20))",
       }}
     />
@@ -50,7 +59,7 @@ export function LandingPage({ onPlay, onDaily }: Props) {
     <div className="min-h-screen" style={{ background: "var(--mm-bg)" }}>
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none" style={{ background: "var(--mm-hero-glow)" }} />
-        <div className="relative max-w-7xl mx-auto px-6 pt-20 pb-16 flex flex-col lg:flex-row items-center gap-12">
+        <div className="relative max-w-7xl mx-auto px-6 pt-8 pb-16 flex flex-col lg:flex-row items-center lg:items-start gap-8">
           <div className="flex-1 text-center lg:text-left">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-6" style={{ background: "var(--mm-amber-glow)", border: "1px solid var(--mm-border-amber)" }}>
               <FlashIcon size={12} color="var(--mm-amber)" />
@@ -89,7 +98,7 @@ export function LandingPage({ onPlay, onDaily }: Props) {
             </div>
           </div>
 
-          <div className="flex-1 flex flex-col items-center gap-6 w-full max-w-xl">
+          <div className="flex-1 flex flex-col items-center gap-4 w-full max-w-xl">
             <LandingBrainImage />
 
             <div className="w-full rounded-2xl p-4" style={{ background: "var(--mm-surface-1)", border: "1px solid var(--mm-border)" }}>
