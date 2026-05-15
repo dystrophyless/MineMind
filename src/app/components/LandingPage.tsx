@@ -1,4 +1,4 @@
-import { BrainIcon, FlashIcon, CrownIcon, StarIcon, ArrowRightBigIcon, ChartUpIcon, RacingFlagIcon, BombIcon, FireIcon } from "hugeicons-react";
+import { BrainIcon, FlashIcon, CrownIcon, StarIcon, ArrowRightBigIcon, ChartUpIcon, RacingFlagIcon, BombIcon } from "hugeicons-react";
 import { useT } from "../i18n/LocaleProvider";
 
 type Props = {
@@ -6,36 +6,116 @@ type Props = {
   onDaily: () => void;
 };
 
-const MINI_BOARD = [
-  [0, 1, -1, 1, 0],
-  [1, 2, 2, 2, 1],
-  [-1, 2, -2, 2, -1],
-  [1, 2, 2, 2, 1],
-  [0, 1, -1, 1, 0],
+type BrainCellKind = "blank" | "number" | "flag" | "mine" | "safe";
+
+type BrainCellSpec = {
+  kind: BrainCellKind;
+  left: string;
+  top: string;
+  size: string;
+  value?: "1" | "2";
+  rotate?: number;
+};
+
+const BRAIN_CELLS: BrainCellSpec[] = [
+  { kind: "blank", left: "7%", top: "37%", size: "14%" },
+  { kind: "flag", left: "22%", top: "27%", size: "14%" },
+  { kind: "number", value: "1", left: "36%", top: "14%", size: "15%" },
+  { kind: "blank", left: "50%", top: "10%", size: "14%" },
+  { kind: "number", value: "2", left: "65%", top: "16%", size: "15%" },
+  { kind: "number", value: "1", left: "13%", top: "49%", size: "14%" },
+  { kind: "number", value: "2", left: "27%", top: "44%", size: "14%" },
+  { kind: "number", value: "1", left: "41%", top: "45%", size: "14%" },
+  { kind: "mine", left: "53%", top: "42%", size: "15%" },
+  { kind: "number", value: "2", left: "68%", top: "44%", size: "14%" },
+  { kind: "number", value: "1", left: "82%", top: "47%", size: "14%" },
+  { kind: "flag", left: "88%", top: "58%", size: "13%" },
+  { kind: "flag", left: "31%", top: "62%", size: "14%" },
+  { kind: "number", value: "2", left: "54%", top: "62%", size: "14%" },
+  { kind: "number", value: "1", left: "67%", top: "62%", size: "14%" },
+  { kind: "safe", left: "76%", top: "28%", size: "16%" },
+  { kind: "flag", left: "61%", top: "78%", size: "14%" },
+  { kind: "blank", left: "74%", top: "77%", size: "13%" },
 ];
 
-function MiniCell({ val }: { val: number }) {
-  if (val === -1) {
-    return (
-      <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: "var(--mm-cell-closed-bg)", boxShadow: "var(--cell-closed-shadow)", border: "1px solid var(--mm-border-amber)" }}>
-        <RacingFlagIcon size={15} color="var(--mm-amber)" />
-      </div>
-    );
-  }
-  if (val === -2) {
-    return (
-      <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: "var(--mm-cell-mine-bg)", border: "1px solid rgba(229,90,90,0.3)" }}>
-        <BombIcon size={15} color="var(--mm-red)" />
-      </div>
-    );
-  }
-  if (val === 0) {
-    return <div className="w-10 h-10 rounded-lg" style={{ background: "var(--mm-cell-closed-bg)", boxShadow: "var(--cell-closed-shadow)", border: "1px solid var(--mm-border)" }} />;
-  }
-  const colors: Record<number, string> = { 1: "var(--mm-blue)", 2: "var(--mm-green)", 3: "var(--mm-red)", 4: "var(--mm-purple)" };
+function BrainTile({ cell }: { cell: BrainCellSpec }) {
+  const isNumber = cell.kind === "number";
+  const contentColor = cell.kind === "mine" ? "var(--mm-red)" : cell.kind === "safe" || cell.value === "2" ? "var(--mm-green)" : cell.kind === "flag" ? "var(--mm-amber)" : "var(--mm-blue)";
+  const background = cell.kind === "mine" ? "var(--mm-cell-mine-bg)" : cell.kind === "safe" ? "var(--mm-cell-safe-bg)" : cell.kind === "flag" ? "var(--mm-cell-flag-bg)" : isNumber ? "var(--mm-cell-open-bg)" : "var(--mm-cell-closed-bg)";
+  const border = cell.kind === "mine" ? "rgba(229,90,90,0.42)" : cell.kind === "safe" ? "var(--mm-green)" : cell.kind === "flag" ? "var(--mm-border-amber)" : "var(--mm-border-2)";
+
   return (
-    <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: "var(--mm-cell-open-bg)", border: "1px solid var(--mm-border)" }}>
-      <span style={{ color: colors[val] || "var(--mm-text)", fontSize: "14px", fontWeight: 700 }}>{val}</span>
+    <div
+      className="absolute rounded-2xl flex items-center justify-center"
+      style={{
+        left: cell.left,
+        top: cell.top,
+        width: cell.size,
+        aspectRatio: "1 / 1",
+        transform: `rotate(${cell.rotate ?? 0}deg)`,
+        background,
+        border: `1px solid ${border}`,
+        boxShadow: cell.kind === "safe" ? "0 0 0 1px rgba(76,217,123,0.22), 0 14px 28px rgba(76,217,123,0.16)" : "var(--cell-closed-shadow)",
+      }}
+    >
+      {isNumber && <span style={{ color: contentColor, fontSize: "clamp(18px, 4vw, 34px)", fontWeight: 800 }}>{cell.value}</span>}
+      {cell.kind === "flag" && <RacingFlagIcon size={28} color={contentColor} />}
+      {cell.kind === "mine" && <BombIcon size={32} color={contentColor} />}
+      {cell.kind === "safe" && <span style={{ color: contentColor, fontSize: "clamp(26px, 5vw, 42px)", fontWeight: 900 }}>✓</span>}
+    </div>
+  );
+}
+
+function BrainBoardIllustration() {
+  const lobes = [
+    { left: "0%", top: "31%", width: "28%", height: "34%", radius: "38% 28% 34% 46%" },
+    { left: "16%", top: "14%", width: "34%", height: "34%", radius: "44% 34% 30% 30%" },
+    { left: "40%", top: "8%", width: "34%", height: "35%", radius: "30% 44% 34% 30%" },
+    { left: "62%", top: "23%", width: "33%", height: "38%", radius: "34% 46% 36% 30%" },
+    { left: "20%", top: "52%", width: "35%", height: "34%", radius: "30% 30% 44% 40%" },
+    { left: "45%", top: "52%", width: "38%", height: "39%", radius: "28% 32% 44% 48%" },
+    { left: "59%", top: "80%", width: "17%", height: "18%", radius: "28% 34% 48% 48%" },
+  ];
+
+  return (
+    <div className="relative w-full max-w-[540px] aspect-[1.18] mx-auto" aria-label="Minesweeper brain illustration" role="img">
+      {lobes.map((lobe, index) => (
+        <div
+          key={index}
+          className="absolute"
+          style={{
+            left: lobe.left,
+            top: lobe.top,
+            width: lobe.width,
+            height: lobe.height,
+            borderRadius: lobe.radius,
+            background: "var(--mm-board-bg)",
+            border: "1px solid var(--mm-border-2)",
+            boxShadow: "var(--mm-board-shadow)",
+          }}
+        />
+      ))}
+
+      <div className="absolute left-[8%] right-[8%] top-[22%] bottom-[16%]" style={{ borderRadius: "34%", background: "var(--mm-board-bg)", border: "1px solid var(--mm-border)", boxShadow: "var(--mm-card-shadow)" }} />
+
+      {BRAIN_CELLS.map((cell, index) => (
+        <BrainTile key={index} cell={cell} />
+      ))}
+
+      {[18, 38, 58, 78].map((left, index) => (
+        <span
+          key={left}
+          className="absolute rounded-full"
+          style={{
+            left: `${left}%`,
+            top: `${index % 2 === 0 ? 35 : 68}%`,
+            width: "6px",
+            height: "6px",
+            background: index % 2 === 0 ? "var(--mm-blue)" : "var(--mm-amber)",
+            boxShadow: "0 0 10px currentColor",
+          }}
+        />
+      ))}
     </div>
   );
 }
@@ -98,30 +178,8 @@ export function LandingPage({ onPlay, onDaily }: Props) {
             </div>
           </div>
 
-          <div className="flex-1 flex flex-col items-center gap-6 w-full max-w-sm lg:max-w-none">
-            <div className="relative">
-              <div className="rounded-2xl p-4 inline-block" style={{ background: "var(--mm-board-bg)", border: "1px solid var(--mm-border-2)", boxShadow: "var(--mm-board-shadow)" }}>
-                <div className="grid gap-1.5" style={{ gridTemplateColumns: "repeat(5, 1fr)" }}>
-                  {MINI_BOARD.flat().map((val, i) => <MiniCell key={i} val={val} />)}
-                </div>
-              </div>
-              <div className="absolute -right-4 top-6 rounded-xl px-3 py-2.5 shadow-2xl" style={{ background: "var(--mm-surface-2)", border: "1px solid var(--mm-green-glow)", backdropFilter: "blur(10px)" }}>
-                <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full" style={{ background: "var(--mm-green)", boxShadow: "0 0 6px var(--mm-green)" }} />
-                  <span style={{ color: "var(--mm-green)", fontSize: "11px", fontWeight: 600 }}>{t("landingSafeMove")}</span>
-                  <span style={{ color: "var(--mm-green)", fontSize: "13px", fontWeight: 800 }}>94%</span>
-                </div>
-              </div>
-              <div className="absolute -left-4 bottom-6 rounded-xl px-3 py-2.5 shadow-2xl" style={{ background: "var(--mm-surface-2)", border: "1px solid var(--mm-border-amber)", backdropFilter: "blur(10px)" }}>
-                <div className="flex items-center gap-2">
-                  <FireIcon size={15} color="var(--mm-amber)" />
-                  <div>
-                    <div style={{ color: "var(--mm-amber)", fontSize: "13px", fontWeight: 800 }}>{t("landingStreak")}</div>
-                    <div style={{ color: "var(--mm-text-3)", fontSize: "10px" }}>{t("landingDaysActive")}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
+          <div className="flex-1 flex flex-col items-center gap-6 w-full max-w-xl">
+            <BrainBoardIllustration />
 
             <div className="w-full rounded-2xl p-4" style={{ background: "var(--mm-surface-1)", border: "1px solid var(--mm-border)" }}>
               <div className="flex items-center justify-between mb-3">

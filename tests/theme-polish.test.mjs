@@ -84,6 +84,17 @@ test("landing cta uses the same max-width rhythm as other landing sections", () 
   assert.doesNotMatch(landingPage, /<section className="mx-6 mb-20 rounded-3xl/);
 });
 
+test("landing hero uses brain board illustration instead of mini grid", () => {
+  const landingPage = readFileSync(LANDING_PAGE, "utf8");
+
+  assert.match(landingPage, /function BrainBoardIllustration/);
+  assert.match(landingPage, /BRAIN_CELLS/);
+  assert.match(landingPage, /aria-label="Minesweeper brain illustration"/);
+  assert.doesNotMatch(landingPage, /MINI_BOARD/);
+  assert.doesNotMatch(landingPage, /function MiniCell/);
+  assert.doesNotMatch(landingPage, /gridTemplateColumns:\s*"repeat\(5, 1fr\)"/);
+});
+
 test("nav buttons use tokenized hover feedback", () => {
   const navBar = readFileSync(NAV_BAR, "utf8");
   const theme = readFileSync(THEME_CSS, "utf8");
