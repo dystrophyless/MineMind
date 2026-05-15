@@ -120,3 +120,16 @@ test("nav destination pages use leaderboard outer padding", () => {
     assert.match(text, /mx-auto px-4 py-8/, `${name} should use leaderboard page padding`);
   }
 });
+
+test("profile hero removes pro avatar ornament and uses refined rank badges", () => {
+  const profileStats = readFileSync(PROFILE_STATS, "utf8");
+
+  assert.doesNotMatch(profileStats, /DiamondIcon/);
+  assert.doesNotMatch(profileStats, /-top-1 -right-1/);
+  assert.match(profileStats, /function ProfileRankBadge/);
+  assert.match(profileStats, /h-8 rounded-full px-3/);
+  assert.match(profileStats, /#247 \{t\("leaderboardGlobal"\)\}/);
+  assert.match(profileStats, /#12 in Almaty/);
+  assert.match(profileStats, /--mm-pro-badge-bg/);
+  assert.match(profileStats, /--mm-nav-control-bg/);
+});
