@@ -27,6 +27,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       setIsLoading(false);
+
+      if (session?.user) {
+        supabase
+          .from("user_profiles")
+          .select("user_id")
+          .eq("user_id", session.user.id)
+          .maybeSingle()
+          .then(({ data: existing }) => {
+            if (!existing) {
+              const base = (session.user.email?.split("@")[0] ?? "player")
+                .replace(/[^a-zA-Z0-9_]/g, "_")
+                .slice(0, 14);
+              const username = `${base}_${session.user.id.slice(0, 5)}`;
+              supabase.from("user_profiles").insert({
+                user_id: session.user.id,
+                username,
+                member_since: new Date().toISOString(),
+              });
+            }
+          });
+      }
     });
 
     return () => subscription.unsubscribe();
