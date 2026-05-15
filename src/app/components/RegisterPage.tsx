@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type ClipboardEvent, type ChangeEvent, typ
 import { useForm, type UseFormRegisterReturn } from "react-hook-form";
 import { EyeIcon, StarIcon } from "hugeicons-react";
 import { Hexagon } from "lucide-react";
+import { supabase } from "../../lib/supabase";
 
 type Props = {
   onRegister: () => void;
@@ -112,6 +113,8 @@ export function RegisterPage({ onRegister, onGoLogin }: Props) {
   const [showPass, setShowPass] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [codeDigits, setCodeDigits] = useState<string[]>(() => Array(CODE_LENGTH).fill(""));
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [pendingEmail, setPendingEmail] = useState("");
   const codeInputRefs = useRef<Array<HTMLInputElement | null>>([]);
 
   const { register, handleSubmit, getValues, setValue, clearErrors, formState: { errors } } = useForm<FormData>();
@@ -177,8 +180,18 @@ export function RegisterPage({ onRegister, onGoLogin }: Props) {
     codeInputRefs.current[Math.min(pastedDigits.length, CODE_LENGTH - 1)]?.focus();
   };
 
-  const onSubmit = () => {
+  const onSubmit = async (data: FormData) => {
+    setAuthError(null);
+
     if (step === "credentials") {
+      setIsLoading(true);
+      const { error } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+      });
+      setIsLoading(false);
+      if (error) { setAuthError(error.message); return; }
+      setPendingEmail(data.email);
       setStep("username");
       return;
     }
@@ -188,11 +201,33 @@ export function RegisterPage({ onRegister, onGoLogin }: Props) {
       return;
     }
 
+    // step === "code"
     setIsLoading(true);
-    window.setTimeout(() => {
+    const { data: verifyData, error: verifyError } = await supabase.auth.verifyOtp({
+      email: pendingEmail,
+      token: data.code,
+      type: "email",
+    });
+    if (verifyError) {
       setIsLoading(false);
-      onRegister();
-    }, 500);
+      setAuthError(verifyError.message);
+      return;
+    }
+
+    const userId = verifyData.user?.id;
+    if (userId) {
+      const { error: profileError } = await supabase
+        .from("user_profiles")
+        .insert({ user_id: userId, username: data.username });
+      if (profileError) {
+        setIsLoading(false);
+        setAuthError("Username taken or invalid.");
+        return;
+      }
+    }
+
+    setIsLoading(false);
+    onRegister();
   };
 
   const email = getValues("email");
@@ -401,6 +436,12 @@ export function RegisterPage({ onRegister, onGoLogin }: Props) {
 
                 {errors.code?.message && <p style={{ color: "var(--mm-red)", fontSize: "12px" }}>{errors.code.message}</p>}
               </div>
+            )}
+
+            {authError && (
+              <p style={{ color: "var(--mm-red)", fontSize: "13px", textAlign: "center", marginBottom: "8px" }}>
+                {authError}
+              </p>
             )}
 
             <button
