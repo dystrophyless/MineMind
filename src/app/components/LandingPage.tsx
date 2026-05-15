@@ -170,15 +170,17 @@ export function LandingPage({ onPlay, onDaily }: Props) {
         </div>
       </section>
 
-      <section className="mx-6 mb-20 rounded-3xl p-12 text-center relative overflow-hidden" style={{ background: "var(--mm-cta-bg)", border: "1px solid var(--mm-cta-border)" }}>
-        <div className="absolute inset-0 pointer-events-none" style={{ background: "transparent" }} />
-        <div className="relative">
-          <h2 style={{ color: "var(--mm-text)", fontSize: "clamp(24px, 4vw, 40px)", fontWeight: 800, marginBottom: "12px" }}>{t("landingCtaTitle")}</h2>
-          <p style={{ color: "var(--mm-text-2)", fontSize: "16px", marginBottom: "32px" }}>{t("landingCtaSubtitle")}</p>
-          <button onClick={onPlay} className="inline-flex items-center gap-2 px-8 py-4 rounded-xl transition-all duration-200 hover:brightness-110 active:scale-95" style={{ background: "var(--mm-action-bg)", color: "var(--mm-action-fg)", fontSize: "16px", fontWeight: 700, fontFamily: "var(--font-mabry)" }}>
-            {t("landingCtaButton")}
-            <ArrowRightBigIcon size={18} color="var(--mm-action-fg)" />
-          </button>
+      <section className="max-w-7xl mx-auto px-6 mb-20">
+        <div className="rounded-3xl p-12 text-center relative overflow-hidden" style={{ background: "var(--mm-cta-bg)", border: "1px solid var(--mm-cta-border)" }}>
+          <div className="absolute inset-0 pointer-events-none" style={{ background: "transparent" }} />
+          <div className="relative">
+            <h2 style={{ color: "var(--mm-text)", fontSize: "clamp(24px, 4vw, 40px)", fontWeight: 800, marginBottom: "12px" }}>{t("landingCtaTitle")}</h2>
+            <p style={{ color: "var(--mm-text-2)", fontSize: "16px", marginBottom: "32px" }}>{t("landingCtaSubtitle")}</p>
+            <button onClick={onPlay} className="inline-flex items-center gap-2 px-8 py-4 rounded-xl transition-all duration-200 hover:brightness-110 active:scale-95" style={{ background: "var(--mm-action-bg)", color: "var(--mm-action-fg)", fontSize: "16px", fontWeight: 700, fontFamily: "var(--font-mabry)" }}>
+              {t("landingCtaButton")}
+              <ArrowRightBigIcon size={18} color="var(--mm-action-fg)" />
+            </button>
+          </div>
         </div>
       </section>
     </div>

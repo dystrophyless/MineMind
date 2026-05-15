@@ -76,6 +76,14 @@ test("white theme landing cta uses a non-amber contrast border", () => {
   assert.match(landingPage, /border:\s*"1px solid var\(--mm-cta-border\)"/);
 });
 
+test("landing cta uses the same max-width rhythm as other landing sections", () => {
+  const landingPage = readFileSync(LANDING_PAGE, "utf8");
+
+  assert.match(landingPage, /<section className="max-w-7xl mx-auto px-6 mb-20">/);
+  assert.match(landingPage, /rounded-3xl p-12 text-center relative overflow-hidden/);
+  assert.doesNotMatch(landingPage, /<section className="mx-6 mb-20 rounded-3xl/);
+});
+
 test("nav buttons use tokenized hover feedback", () => {
   const navBar = readFileSync(NAV_BAR, "utf8");
   const theme = readFileSync(THEME_CSS, "utf8");
