@@ -95,7 +95,7 @@ export function Leaderboard() {
                       onClick={() => group.onSelect(item.key)}
                       onMouseEnter={() => group.onHover(item.key)}
                       onMouseLeave={() => group.onHover(null)}
-                      className="rounded-lg px-3 py-2 transition-all duration-200"
+                      className="flex-1 text-center rounded-lg px-2 py-2.5 transition-all duration-200"
                       style={{
                         background: isActive ? "var(--mm-selected-bg)" : isHovered ? "var(--mm-nav-hover-bg)" : "transparent",
                         color: isActive ? "var(--mm-selected-fg)" : isHovered ? "var(--mm-nav-hover-fg)" : "var(--mm-text-2)",
@@ -115,10 +115,10 @@ export function Leaderboard() {
         </div>
 
         <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--mm-border)" }}>
-          <div className="grid px-4 py-3" style={{ gridTemplateColumns: "60px 1fr 120px", background: "var(--mm-surface-2)", borderBottom: "1px solid var(--mm-border)" }}>
-            {[t("tableRank"), t("tablePlayer"), scoreHeader].map(h => (
-              <span key={h} style={{ color: "var(--mm-text-3)", fontSize: "11px", textTransform: "uppercase" }}>{h}</span>
-            ))}
+          <div className="grid px-4 py-3 grid-cols-[40px_1fr_80px] md:grid-cols-[60px_1fr_120px]" style={{ background: "var(--mm-surface-2)", borderBottom: "1px solid var(--mm-border)" }}>
+            <span style={{ color: "var(--mm-text-3)", fontSize: "11px", textTransform: "uppercase" }}>{t("tableRank")}</span>
+            <span style={{ color: "var(--mm-text-3)", fontSize: "11px", textTransform: "uppercase" }}>{t("tablePlayer")}</span>
+            <span style={{ color: "var(--mm-text-3)", fontSize: "11px", textTransform: "uppercase", textAlign: "right" }}>{scoreHeader}</span>
           </div>
 
           {leaderboardLoading ? (
@@ -129,27 +129,26 @@ export function Leaderboard() {
             rows.map((row, i) => (
               <div
                 key={`${row.playerId}-${row.rank}`}
-                className="grid px-4 py-3.5 items-center"
+                className="grid px-4 py-3.5 items-center grid-cols-[40px_1fr_80px] md:grid-cols-[60px_1fr_120px]"
                 style={{
-                  gridTemplateColumns: "60px 1fr 120px",
                   background: row.isMe ? "var(--mm-amber-glow)" : i % 2 === 0 ? "var(--mm-surface-1)" : "var(--mm-bg)",
                   borderBottom: "1px solid var(--mm-border)",
                   borderLeft: row.isMe ? "3px solid var(--mm-amber)" : "3px solid transparent",
                 }}
               >
                 <div className="flex items-center"><RankIcon rank={row.rank} /></div>
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: row.isMe ? "var(--mm-action-bg)" : "var(--mm-surface-3)", border: `1px solid ${row.isMe ? "var(--mm-amber)" : "var(--mm-border)"}` }}>
-                    <span style={{ color: row.isMe ? "var(--mm-action-fg)" : "var(--mm-text-2)", fontSize: "12px", fontWeight: 700 }}>{row.player[0]}</span>
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: row.isMe ? "var(--mm-action-bg)" : "var(--mm-surface-3)", border: `1px solid ${row.isMe ? "var(--mm-amber)" : "var(--mm-border)"}` }}>
+                    <span style={{ color: row.isMe ? "var(--mm-action-fg)" : "var(--mm-text-2)", fontSize: "11px", fontWeight: 700 }}>{row.player[0]}</span>
                   </div>
-                  <div>
-                    <span style={{ color: row.isMe ? "var(--mm-amber)" : "var(--mm-text)", fontSize: "13px", fontWeight: row.isMe ? 700 : 500 }}>
+                  <div className="min-w-0">
+                    <div className="truncate" style={{ color: row.isMe ? "var(--mm-amber)" : "var(--mm-text)", fontSize: "13px", fontWeight: row.isMe ? 700 : 500 }}>
                       {row.isMe ? t("leaderboardYou") : row.player}
-                    </span>
+                    </div>
                     <div style={{ color: "var(--mm-text-3)", fontSize: "11px" }}>{row.city}</div>
                   </div>
                 </div>
-                <span style={{ color: tab === "timed" ? "var(--mm-red)" : "var(--mm-amber)", fontSize: "13px", fontWeight: 800 }}>{row.scoreLabel}</span>
+                <span style={{ color: tab === "timed" ? "var(--mm-red)" : "var(--mm-amber)", fontSize: "12px", fontWeight: 800, textAlign: "right", whiteSpace: "nowrap", display: "block" }}>{row.scoreLabel}</span>
               </div>
             ))
           )}
