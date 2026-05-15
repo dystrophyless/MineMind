@@ -9,6 +9,7 @@ import { MobileGame } from "./components/MobileGame";
 import { DesignSystemShowcase } from "./components/DesignSystemShowcase";
 import { LoginPage } from "./components/LoginPage";
 import { RegisterPage } from "./components/RegisterPage";
+import { useAuth } from "./contexts/AuthContext";
 
 type Page = "landing" | "game" | "daily" | "leaderboard" | "profile" | "design" | "login" | "register";
 
@@ -24,7 +25,8 @@ function useIsMobile() {
 
 export default function App() {
   const [page, setPage] = useState<Page>("landing");
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { user, isLoading } = useAuth();
+  const isAuthenticated = !!user;
   const isMobile = useIsMobile();
   const authRequiredPages = new Set<Page>(["game", "daily", "leaderboard", "profile", "design"]);
   const showGuestLanding = !isAuthenticated && authRequiredPages.has(page);
@@ -43,9 +45,10 @@ export default function App() {
   };
 
   const completeAuth = () => {
-    setIsAuthenticated(true);
     navigate("profile");
   };
+
+  if (isLoading) return null;
 
   if (page === "login") {
     return (
