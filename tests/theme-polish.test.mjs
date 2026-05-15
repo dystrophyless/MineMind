@@ -262,7 +262,12 @@ test("desktop play page uses the same four 9x9 game modes instead of old difficu
   assert.match(dashboard, /useGameLogic\(gameBoardPreset,/);
   assert.match(dashboard, /allowFlags:\s*mode !== "noFlags"/);
   assert.match(dashboard, /flagsEnabled=\{mode !== "noFlags"\}/);
-  assert.match(dashboard, /9 x 9/);
+  assert.match(dashboard, /\{t\("mode"\)\}/);
+  assert.match(dashboard, /\{modeLabels\[mode\]\}/);
+  assert.doesNotMatch(dashboard, /modeLabels\[mode\]\} \{t\("mode"\)\}/);
+  assert.doesNotMatch(dashboard, /9 x 9/);
+  assert.doesNotMatch(dashboard, /config\.mines/);
+  assert.doesNotMatch(dashboard, /statusLabel/);
   assert.doesNotMatch(dashboard, /setDifficulty/);
   assert.doesNotMatch(dashboard, /difficultyLabels/);
   assert.match(controls, /type GameMode = "classic" \| "noFlags" \| "timed" \| "daily"/);

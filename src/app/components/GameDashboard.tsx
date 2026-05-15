@@ -24,7 +24,7 @@ export function GameDashboard({ onNavigate, initialMode = "classic" }: Props) {
   const [timedSecondsLeft, setTimedSecondsLeft] = useState(TIMED_MODE_INITIAL_SECONDS);
   const [timedMinesFound, setTimedMinesFound] = useState(0);
   const gameBoardPreset: BoardPreset = mode === "daily" ? "daily" : "standard";
-  const { board, status, time, formatTime, minesLeft, revealCell, toggleFlag, resetGame, endGame, config } = useGameLogic(gameBoardPreset, {
+  const { board, status, time, formatTime, minesLeft, revealCell, toggleFlag, resetGame, endGame } = useGameLogic(gameBoardPreset, {
     allowFlags: mode !== "noFlags",
   });
 
@@ -48,7 +48,6 @@ export function GameDashboard({ onNavigate, initialMode = "classic" }: Props) {
     daily: t("mobileModeDaily"),
   };
   const timerText = mode === "timed" ? formatTime(timedSecondsLeft) : formatTime(time);
-  const statusLabel = status === "idle" ? t("statusReady") : status === "playing" ? t("statusLive") : status === "won" ? t("statusVictory") : t("statusGameOver");
 
   useEffect(() => {
     if (mode !== "timed" || status !== "playing") return;
@@ -114,9 +113,9 @@ export function GameDashboard({ onNavigate, initialMode = "classic" }: Props) {
           <div className="flex flex-col gap-4 flex-1 min-w-0">
             <div className="rounded-2xl p-6 flex flex-col items-center justify-center gap-4" style={{ background: "var(--mm-surface-1)", border: "1px solid var(--mm-border)", minHeight: "400px" }}>
               <div className="w-full flex items-center justify-between">
-                <div>
-                  <p style={{ color: "var(--mm-text)", fontSize: "15px", fontWeight: 700 }}>{modeLabels[mode]} {t("mode")}</p>
-                  <p style={{ color: "var(--mm-text-3)", fontSize: "12px" }}>9 x 9 · {config.mines} {t("boardMines")}</p>
+                <div className="flex flex-col gap-1">
+                  <p style={{ color: "var(--mm-text-3)", fontSize: "11px", fontWeight: 700, textTransform: "uppercase" }}>{t("mode")}</p>
+                  <p style={{ color: "var(--mm-text)", fontSize: "16px", fontWeight: 800 }}>{modeLabels[mode]}</p>
                 </div>
                 <div className="flex items-center gap-3">
                   {mode === "timed" && (
@@ -124,10 +123,6 @@ export function GameDashboard({ onNavigate, initialMode = "classic" }: Props) {
                       <span style={{ color: "var(--mm-amber)", fontSize: "12px", fontWeight: 800 }}>{t("mobileTimedScore")} {timedMinesFound} mines</span>
                     </div>
                   )}
-                  <div className="px-3 py-1.5 rounded-lg flex items-center gap-1.5" style={{ background: "var(--mm-surface-3)", border: "1px solid var(--mm-border)" }}>
-                    <div className="w-1.5 h-1.5 rounded-full" style={{ background: status === "playing" ? "var(--mm-green)" : status === "won" ? "var(--mm-amber)" : status === "lost" ? "var(--mm-red)" : "var(--mm-text-3)", boxShadow: status === "playing" ? "0 0 6px var(--mm-green)" : "none" }} />
-                    <span style={{ color: "var(--mm-text-2)", fontSize: "12px" }}>{statusLabel}</span>
-                  </div>
                 </div>
               </div>
 
