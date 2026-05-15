@@ -59,7 +59,7 @@
   --mm-overlay: rgba(0,0,0,0.5);
   --mm-modal-bg: rgba(13,15,23,0.9);
   --mm-cta-bg: #0D0F17;
-  --mm-cta-border: var(--mm-border);
+  --mm-cta-border: var(--mm-border-amber);
   --mm-pro-bg: #1A1428;
   --mm-cell-closed-bg: #24283D;
   --mm-cell-open-bg: #111428;

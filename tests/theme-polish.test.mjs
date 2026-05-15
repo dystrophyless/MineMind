@@ -68,12 +68,12 @@ test("white theme board cells have visible contrast", () => {
   assert.match(whiteThemeVariable("--cell-closed-shadow"), /rgba\(15,23,42,0\.22\)/);
 });
 
-test("white theme landing cta uses a non-amber contrast border", () => {
+test("white theme landing cta uses the standard page border token", () => {
   const theme = readFileSync(THEME_CSS, "utf8");
   const landingPage = readFileSync(LANDING_PAGE, "utf8");
 
   assert.match(theme, /--mm-cta-border:\s*var\(--mm-border-amber\);/);
-  assert.equal(whiteThemeVariable("--mm-cta-border"), "rgba(37, 99, 235, 0.24)");
+  assert.equal(whiteThemeVariable("--mm-cta-border"), "var(--mm-border)");
   assert.match(landingPage, /border:\s*"1px solid var\(--mm-cta-border\)"/);
 });
 
