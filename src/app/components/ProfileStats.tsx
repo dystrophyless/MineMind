@@ -2,6 +2,8 @@ import { BrainIcon, StarIcon, StopWatchIcon, FireIcon, ChartUpIcon, CrownIcon, B
 import { useT } from "../i18n/LocaleProvider";
 import type { ReactNode } from "react";
 import type { TranslationKey } from "../i18n/translations";
+import { useProfileStats } from "../hooks/useProfileStats";
+import { SettingsControls } from "./SettingsControls";
 
 type RecentGameResult = "won" | "lost";
 
@@ -33,53 +35,88 @@ function ProfileRankBadge({ children, icon, tone }: { children: ReactNode; icon?
 
 export function ProfileStats() {
   const t = useT();
+  const { data: profileData, isLoading } = useProfileStats();
+
+  const formatTime = (s: number) =>
+    `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, "0")}`;
+
+  const modeKeyMap: Record<string, TranslationKey> = {
+    classic: "mobileModeClassic",
+    noFlags: "mobileModeNoFlags",
+    timed: "mobileModeTimed",
+    daily: "mobileModeDaily",
+  };
+
+  const badgeKeyMap: { name: TranslationKey; desc: TranslationKey }[] = [
+    { name: "profileBadgeSpeed", desc: "profileBadgeSpeedDesc" },
+    { name: "profileBadgeFlawless", desc: "profileBadgeFlawlessDesc" },
+    { name: "profileBadgeStreak", desc: "profileBadgeStreakDesc" },
+    { name: "profileBadgeDaily", desc: "profileBadgeDailyDesc" },
+    { name: "profileBadgeGrandmaster", desc: "profileBadgeGrandmasterDesc" },
+    { name: "profileBadgeScholar", desc: "profileBadgeScholarDesc" },
+  ];
+
+  if (isLoading) return <div style={{ padding: "64px", textAlign: "center", color: "var(--mm-text-3)" }}>{t("loading")}</div>;
+  if (!profileData) return null;
+
   const stats = [
-    { label: t("landingWinRate"), value: "82%", icon: <ChartUpIcon size={16} color="var(--mm-green)" />, color: "var(--mm-green)", change: t("profileThisWeek") },
-    { label: t("profileGamesPlayed"), value: "1,247", icon: <BrainIcon size={16} color="var(--mm-blue)" />, color: "var(--mm-blue)", change: t("profileToday") },
-    { label: t("landingBestTime"), value: "1:24", icon: <StopWatchIcon size={16} color="var(--mm-amber)" />, color: "var(--mm-amber)", change: t("difficultyBeginner") },
-    { label: t("profileAvgAccuracy"), value: "94%", icon: <StarIcon size={16} color="var(--mm-purple)" />, color: "var(--mm-purple)", change: t("profileTopPercent") },
-    { label: t("profileCurrentStreak"), value: "7", icon: <FireIcon size={16} color="var(--mm-red)" />, color: "var(--mm-red)", change: t("profilePersonalBest") },
-    { label: t("profileFavDifficulty"), value: t("difficultyAdvanced"), icon: <BombIcon size={16} color="var(--mm-text-2)" />, color: "var(--mm-text-2)", change: t("profileOfGames") },
+    { label: t("landingWinRate"), value: `${profileData.winRate}%`, icon: <ChartUpIcon size={16} color="var(--mm-green)" />, color: "var(--mm-green)", change: t("profileThisWeek") },
+    { label: t("profileGamesPlayed"), value: profileData.gamesPlayed.toLocaleString(), icon: <BrainIcon size={16} color="var(--mm-blue)" />, color: "var(--mm-blue)", change: t("profileToday") },
+    { label: t("landingBestTime"), value: profileData.bestTimeSeconds ? formatTime(profileData.bestTimeSeconds) : "—", icon: <StopWatchIcon size={16} color="var(--mm-amber)" />, color: "var(--mm-amber)", change: t("mobileModeClassic") },
+    { label: t("profileFavMode"), value: t(modeKeyMap[profileData.favoriteMode] ?? "mobileModeClassic"), icon: <BombIcon size={16} color="var(--mm-purple)" />, color: "var(--mm-purple)", change: t("profileOfGames") },
+    { label: t("profileCurrentStreak"), value: profileData.currentStreak.toString(), icon: <FireIcon size={16} color="var(--mm-red)" />, color: "var(--mm-red)", change: t("profilePersonalBest") },
   ];
-  const badges: { name: TranslationKey; desc: TranslationKey; icon: ReactNode; unlocked: boolean }[] = [
-    { name: "profileBadgeSpeed", desc: "profileBadgeSpeedDesc", icon: <FlashIcon size={24} color="var(--mm-amber)" />, unlocked: true },
-    { name: "profileBadgeFlawless", desc: "profileBadgeFlawlessDesc", icon: <StarIcon size={24} color="var(--mm-amber)" />, unlocked: true },
-    { name: "profileBadgeStreak", desc: "profileBadgeStreakDesc", icon: <FireIcon size={24} color="var(--mm-amber)" />, unlocked: true },
-    { name: "profileBadgeDaily", desc: "profileBadgeDailyDesc", icon: <StopWatchIcon size={24} color="var(--mm-amber)" />, unlocked: false },
-    { name: "profileBadgeGrandmaster", desc: "profileBadgeGrandmasterDesc", icon: <CrownIcon size={24} color="var(--mm-amber)" />, unlocked: false },
-    { name: "profileBadgeScholar", desc: "profileBadgeScholarDesc", icon: <BrainIcon size={24} color="var(--mm-amber)" />, unlocked: false },
-  ];
-  const recentGames: { diff: string; time: string; accuracy: number; result: RecentGameResult; date: string }[] = [
-    { diff: t("difficultyAdvanced"), time: "2:14", accuracy: 96, result: "won", date: t("profileDateToday") },
-    { diff: t("difficultyAdvanced"), time: "1:58", accuracy: 98, result: "won", date: t("profileDateToday") },
-    { diff: t("difficultyExpert"), time: "-", accuracy: 72, result: "lost", date: t("profileDateToday") },
-    { diff: t("difficultyBeginner"), time: "1:24", accuracy: 100, result: "won", date: t("profileDateYesterday") },
-    { diff: t("difficultyAdvanced"), time: "2:37", accuracy: 95, result: "won", date: t("profileDateYesterday") },
-  ];
+
+  const badges: { name: TranslationKey; desc: TranslationKey; icon: ReactNode; unlocked: boolean }[] = badgeKeyMap.map((b, i) => ({
+    name: b.name,
+    desc: b.desc,
+    icon: [
+      <FlashIcon size={24} color="var(--mm-amber)" />,
+      <StarIcon size={24} color="var(--mm-amber)" />,
+      <FireIcon size={24} color="var(--mm-amber)" />,
+      <StopWatchIcon size={24} color="var(--mm-amber)" />,
+      <CrownIcon size={24} color="var(--mm-amber)" />,
+      <BrainIcon size={24} color="var(--mm-amber)" />,
+    ][i],
+    unlocked: profileData.badges[i]?.unlocked ?? false,
+  }));
+
+  const recentGames: { mode: string; time: string; result: RecentGameResult; date: string }[] = profileData.recentGames.map(g => ({
+    mode: t(modeKeyMap[g.mode] ?? "mobileModeClassic"),
+    time: g.mode === "timed"
+      ? `${g.minesFound ?? 0} ${t("boardMines")}`
+      : g.timeSeconds ? formatTime(g.timeSeconds) : "—",
+    result: g.status,
+    date: new Date(g.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+  }));
 
   return (
     <div className="min-h-screen" style={{ background: "var(--mm-bg)" }}>
       <div className="max-w-5xl mx-auto px-4 py-8">
+        <div className="flex justify-end mb-3 md:hidden">
+          <SettingsControls compact />
+        </div>
+
         <div className="rounded-2xl p-6 mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-5" style={{ background: "var(--mm-surface-1)", border: "1px solid var(--mm-border)" }}>
           <div className="w-20 h-20 rounded-2xl flex items-center justify-center shrink-0" style={{ background: "var(--mm-action-bg)", boxShadow: "var(--mm-action-shadow)" }}>
-            <span style={{ color: "var(--mm-action-fg)", fontSize: "32px", fontWeight: 800 }}>Y</span>
+            <span style={{ color: "var(--mm-action-fg)", fontSize: "32px", fontWeight: 800 }}>{profileData.avatarInitial}</span>
           </div>
 
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1 flex-wrap">
-              <h1 style={{ color: "var(--mm-text)", fontSize: "24px", fontWeight: 800 }}>{t("leaderboardYou")}</h1>
+              <h1 style={{ color: "var(--mm-text)", fontSize: "24px", fontWeight: 800 }}>{profileData.username}</h1>
               <ProfileRankBadge tone="global" icon={<CrownIcon size={12} color="currentColor" />}>
-                #247 {t("leaderboardGlobal")}
+                — {t("leaderboardGlobal")}
               </ProfileRankBadge>
-              <ProfileRankBadge tone="city">#12 in Almaty</ProfileRankBadge>
+              <ProfileRankBadge tone="city">— {profileData.city ? `${t("profileCityIn")} ${profileData.city}` : "—"}</ProfileRankBadge>
             </div>
             <p style={{ color: "var(--mm-text-2)", fontSize: "13px", marginBottom: "12px" }}>{t("profileMemberSince")}</p>
             <div>
               <div className="flex justify-between mb-1.5">
                 <span style={{ color: "var(--mm-text-3)", fontSize: "11px" }}>{t("profileLevel")}</span>
-                <span style={{ color: "var(--mm-amber)", fontSize: "11px" }}>7,240 / 10,000 XP</span>
+                <span style={{ color: "var(--mm-amber)", fontSize: "11px" }}>{`${profileData.xp.toLocaleString()} / 10,000 XP`}</span>
               </div>
-              <ProgressBar value={7240} max={10000} color="var(--mm-amber)" />
+              <ProgressBar value={profileData.xp} max={10000} color="var(--mm-amber)" />
             </div>
           </div>
         </div>
@@ -99,24 +136,30 @@ export function ProfileStats() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <div className="rounded-2xl p-5" style={{ background: "var(--mm-surface-1)", border: "1px solid var(--mm-border)" }}>
-            <p style={{ color: "var(--mm-text)", fontSize: "14px", fontWeight: 700, marginBottom: "16px" }}>{t("profileWinRateByDifficulty")}</p>
+            <p style={{ color: "var(--mm-text)", fontSize: "14px", fontWeight: 700, marginBottom: "16px" }}>{t("profileWinRateByMode")}</p>
             <div className="flex flex-col gap-4">
-              {[
-                { label: t("difficultyBeginner"), rate: 96, color: "var(--mm-green)", games: 480 },
-                { label: t("difficultyAdvanced"), rate: 82, color: "var(--mm-amber)", games: 620 },
-                { label: t("difficultyExpert"), rate: 41, color: "var(--mm-red)", games: 147 },
-              ].map(d => (
-                <div key={d.label}>
-                  <div className="flex justify-between mb-1.5">
-                    <span style={{ color: "var(--mm-text-2)", fontSize: "13px" }}>{d.label}</span>
-                    <div className="flex items-center gap-3">
-                      <span style={{ color: "var(--mm-text-3)", fontSize: "11px" }}>{d.games} {t("profileGames")}</span>
-                      <span style={{ color: d.color, fontSize: "13px", fontWeight: 700, width: "40px", textAlign: "right" }}>{d.rate}%</span>
+              {["classic", "noFlags", "timed", "daily"].map(m => {
+                const row = profileData.modeStats.find(s => s.mode === m);
+                const rate = row && row.total > 0 ? Math.round((row.wins / row.total) * 100) : 0;
+                const colors: Record<string, string> = {
+                  classic: "var(--mm-green)",
+                  noFlags: "var(--mm-blue)",
+                  timed: "var(--mm-amber)",
+                  daily: "var(--mm-red)",
+                };
+                return (
+                  <div key={m}>
+                    <div className="flex justify-between mb-1.5">
+                      <span style={{ color: "var(--mm-text-2)", fontSize: "13px" }}>{t(modeKeyMap[m] ?? "mobileModeClassic")}</span>
+                      <div className="flex items-center gap-3">
+                        <span style={{ color: "var(--mm-text-3)", fontSize: "11px" }}>{row?.total ?? 0} {t("profileGames")}</span>
+                        <span style={{ color: colors[m], fontSize: "13px", fontWeight: 700, width: "40px", textAlign: "right" }}>{rate}%</span>
+                      </div>
                     </div>
+                    <ProgressBar value={rate} max={100} color={colors[m]} />
                   </div>
-                  <ProgressBar value={d.rate} max={100} color={d.color} />
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -126,9 +169,8 @@ export function ProfileStats() {
               {recentGames.map((g, i) => (
                 <div key={i} className="flex items-center gap-3 rounded-xl px-3 py-2.5" style={{ background: "var(--mm-surface-2)", border: "1px solid var(--mm-border)" }}>
                   <div className="w-2 h-2 rounded-full shrink-0" style={{ background: g.result === "won" ? "var(--mm-green)" : "var(--mm-red)" }} />
-                  <span style={{ color: "var(--mm-text-2)", fontSize: "12px", flex: 1 }}>{g.diff}</span>
+                  <span style={{ color: "var(--mm-text-2)", fontSize: "12px", flex: 1 }}>{g.mode}</span>
                   <span style={{ color: "var(--mm-amber)", fontSize: "12px", fontWeight: 700 }}>{g.time}</span>
-                  <span style={{ color: "var(--mm-blue)", fontSize: "12px" }}>{g.accuracy}%</span>
                   <span style={{ color: "var(--mm-text-3)", fontSize: "11px" }}>{g.date}</span>
                 </div>
               ))}

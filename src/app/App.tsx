@@ -7,8 +7,11 @@ import { Leaderboard } from "./components/Leaderboard";
 import { ProfileStats } from "./components/ProfileStats";
 import { MobileGame } from "./components/MobileGame";
 import { DesignSystemShowcase } from "./components/DesignSystemShowcase";
+import { LoginPage } from "./components/LoginPage";
+import { RegisterPage } from "./components/RegisterPage";
+import { useAuth } from "./contexts/AuthContext";
 
-type Page = "landing" | "game" | "daily" | "leaderboard" | "profile" | "design";
+type Page = "landing" | "game" | "daily" | "leaderboard" | "profile" | "design" | "login" | "register";
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -22,21 +25,46 @@ function useIsMobile() {
 
 export default function App() {
   const [page, setPage] = useState<Page>("landing");
+  const { user, isLoading } = useAuth();
+  const isAuthenticated = !!user;
   const isMobile = useIsMobile();
+  const authRequiredPages = new Set<Page>(["game", "daily", "leaderboard", "profile", "design"]);
+  const showGuestLanding = !isAuthenticated && authRequiredPages.has(page);
+  const visiblePage = showGuestLanding ? "landing" : page;
+  const contentInsetClass = !isAuthenticated ? "pt-[64px] md:pt-0" : visiblePage === "game" ? "pb-0 md:pb-0" : "pb-[76px] md:pb-0";
 
   const navigate = (p: Page) => {
+    if (!isAuthenticated && authRequiredPages.has(p)) {
+      setPage("login");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
     setPage(p);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  if (isMobile && page === "game") {
+  const completeAuth = () => {
+    navigate("profile");
+  };
+
+  if (isLoading) return null;
+
+  if (page === "login") {
     return (
-      <div
-        className="size-full flex flex-col overflow-hidden relative"
-        style={{ background: "var(--mm-bg)", fontFamily: "var(--font-mabry)" }}
-      >
-        <MobileGame />
-      </div>
+      <LoginPage
+        onLogin={completeAuth}
+        onGoRegister={() => navigate("register")}
+      />
+    );
+  }
+
+  if (page === "register") {
+    return (
+      <RegisterPage
+        onRegister={completeAuth}
+        onGoLogin={() => navigate("login")}
+      />
     );
   }
 
@@ -46,24 +74,29 @@ export default function App() {
       style={{ background: "var(--mm-bg)", fontFamily: "var(--font-mabry)" }}
     >
       {/* Sticky nav */}
-      <div className="sticky top-0 z-50">
-        <NavBar currentPage={page} onNavigate={navigate} />
+      <div className="hidden md:block sticky top-0 z-50">
+        <NavBar currentPage={visiblePage} isAuthenticated={isAuthenticated} onNavigate={navigate} />
       </div>
 
       {/* Page content */}
-      <div className="flex-1">
-        {page === "landing" && (
+      <div className={`flex-1 ${contentInsetClass}`}>
+        {visiblePage === "landing" && (
           <LandingPage onPlay={() => navigate("game")} onDaily={() => navigate("daily")} />
         )}
-        {page === "game" && (
+        {visiblePage === "game" && isMobile && <MobileGame />}
+        {visiblePage === "game" && !isMobile && (
           <GameDashboard
             onNavigate={(p) => navigate(p as Page)}
           />
         )}
-        {page === "daily" && <DailyChallenge />}
-        {page === "leaderboard" && <Leaderboard />}
-        {page === "profile" && <ProfileStats />}
-        {page === "design" && <DesignSystemShowcase />}
+        {visiblePage === "daily" && <DailyChallenge />}
+        {visiblePage === "leaderboard" && <Leaderboard />}
+        {visiblePage === "profile" && <ProfileStats />}
+        {visiblePage === "design" && <DesignSystemShowcase />}
+      </div>
+
+      <div className="md:hidden">
+        <NavBar currentPage={visiblePage} isAuthenticated={isAuthenticated} onNavigate={navigate} />
       </div>
     </div>
   );

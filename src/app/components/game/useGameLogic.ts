@@ -10,6 +10,11 @@ export type CellState = {
 export type GameStatus = "idle" | "playing" | "won" | "lost";
 export type Difficulty = "beginner" | "intermediate" | "expert" | "daily";
 
+type GameLogicOptions = {
+  allowFlags?: boolean;
+  timeLimit?: number;
+};
+
 export const DIFFICULTY_CONFIG = {
   beginner:     { rows: 9,  cols: 9,  mines: 10, label: "Beginner" },
   intermediate: { rows: 16, cols: 16, mines: 40, label: "Advanced" },
@@ -98,15 +103,14 @@ function revealCells(board: Board, row: number, col: number, rows: number, cols:
   return newBoard;
 }
 
-export function useGameLogic(difficulty: Difficulty) {
+export function useGameLogic(difficulty: Difficulty, options: GameLogicOptions = {}) {
+  const { allowFlags = true, timeLimit } = options;
   const config = DIFFICULTY_CONFIG[difficulty];
   const [board, setBoard] = useState<Board>(() => createEmptyBoard(config.rows, config.cols));
   const [status, setStatus] = useState<GameStatus>("idle");
   const [time, setTime] = useState(0);
   const [flagCount, setFlagCount] = useState(0);
-  const [accuracy, setAccuracy] = useState(100);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const clicksRef = useRef({ total: 0, correct: 0 });
 
   const resetGame = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -114,22 +118,35 @@ export function useGameLogic(difficulty: Difficulty) {
     setStatus("idle");
     setTime(0);
     setFlagCount(0);
-    setAccuracy(100);
-    clicksRef.current = { total: 0, correct: 0 };
   }, [config.rows, config.cols]);
+
+  const endGame = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    setBoard(prev => prev.map(row => row.map(cell => cell.isMine ? { ...cell, isRevealed: true } : cell)));
+    setStatus("lost");
+  }, []);
 
   useEffect(() => {
     resetGame();
-  }, [difficulty]);
+  }, [difficulty, allowFlags, timeLimit, resetGame]);
 
   useEffect(() => {
     if (status === "playing") {
-      timerRef.current = setInterval(() => setTime(t => t + 1), 1000);
+      timerRef.current = setInterval(() => {
+        setTime(t => {
+          const next = t + 1;
+          if (timeLimit !== undefined && next >= timeLimit) {
+            endGame();
+            return timeLimit;
+          }
+          return next;
+        });
+      }, 1000);
     } else {
       if (timerRef.current) clearInterval(timerRef.current);
     }
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [status]);
+  }, [endGame, status, timeLimit]);
 
   const revealCell = useCallback((row: number, col: number) => {
     setBoard(prev => {
@@ -144,7 +161,6 @@ export function useGameLogic(difficulty: Difficulty) {
       }
 
       const targetCell = currentBoard[row][col];
-      clicksRef.current.total++;
 
       if (targetCell.isMine) {
         const newBoard = currentBoard.map(r => r.map(c => ({ ...c, isRevealed: c.isMine || c.isRevealed })));
@@ -152,7 +168,6 @@ export function useGameLogic(difficulty: Difficulty) {
         setStatus("lost");
         return newBoard;
       } else {
-        clicksRef.current.correct++;
         const newBoard = revealCells(currentBoard, row, col, config.rows, config.cols);
         const revealedSafe = newBoard.flat().filter(c => c.isRevealed && !c.isMine).length;
         const totalSafe = config.rows * config.cols - config.mines;
@@ -160,15 +175,13 @@ export function useGameLogic(difficulty: Difficulty) {
         if (revealedSafe === totalSafe) {
           setStatus("won");
         }
-        if (clicksRef.current.total > 0) {
-          setAccuracy(Math.round((clicksRef.current.correct / clicksRef.current.total) * 100));
-        }
         return newBoard;
       }
     });
   }, [status, config]);
 
   const toggleFlag = useCallback((row: number, col: number) => {
+    if (!allowFlags) return;
     setBoard(prev => {
       const cell = prev[row][col];
       if (cell.isRevealed) return prev;
@@ -177,10 +190,11 @@ export function useGameLogic(difficulty: Difficulty) {
       setFlagCount(f => cell.isFlagged ? f - 1 : f + 1);
       return newBoard;
     });
-  }, []);
+  }, [allowFlags]);
 
   const minesLeft = config.mines - flagCount;
   const formatTime = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+  const timeRemaining = timeLimit !== undefined ? Math.max(timeLimit - time, 0) : undefined;
 
-  return { board, status, time, formatTime, minesLeft, accuracy, revealCell, toggleFlag, resetGame, config };
+  return { board, status, time, timeRemaining, formatTime, minesLeft, revealCell, toggleFlag, resetGame, endGame, config };
 }

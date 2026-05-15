@@ -346,4 +346,9 @@
     font-weight: var(--font-weight-normal);
     line-height: 1.5;
   }
+
+  .auth-password-input::-ms-reveal,
+  .auth-password-input::-ms-clear {
+    display: none;
+  }
 }

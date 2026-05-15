@@ -24,14 +24,12 @@ function LandingBrainImage() {
     <img
       src={LANDING_BRAIN_IMAGES[theme]}
       alt="Minesweeper brain board illustration"
-      className="w-full max-w-[560px] mx-auto"
+      className="w-full max-w-[560px] mx-auto mt-0 mb-4 lg:-mt-12 lg:-mb-16"
       loading="eager"
       decoding="async"
       style={{
         display: "block",
         objectFit: "contain",
-        marginTop: "-48px",
-        marginBottom: "-64px",
         transform: `scale(${LANDING_BRAIN_IMAGE_SCALE[theme]})`,
         transformOrigin: "center",
         filter: "drop-shadow(0 22px 42px rgba(0,0,0,0.20))",
@@ -57,7 +55,7 @@ export function LandingPage({ onPlay, onDaily }: Props) {
 
   return (
     <div className="min-h-screen" style={{ background: "var(--mm-bg)" }}>
-      <section className="relative overflow-hidden">
+      <section id="landing-hero" className="relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none" style={{ background: "var(--mm-hero-glow)" }} />
         <div className="relative max-w-7xl mx-auto px-6 pt-8 pb-16 flex flex-col lg:flex-row items-center lg:items-start gap-8">
           <div className="flex-1 text-center lg:text-left">
@@ -107,7 +105,7 @@ export function LandingPage({ onPlay, onDaily }: Props) {
                 <span style={{ color: "var(--mm-amber)", fontSize: "11px" }}>{t("landingRank")}</span>
               </div>
               <div className="grid grid-cols-3 gap-2">
-                {[["82%", t("landingWinRate")], ["1:24", t("landingBestTime")], ["94%", t("landingAccuracy")]].map(([v, l], i) => (
+                {[["82%", t("landingWinRate")], ["1:24", t("landingBestTime")], ["7", t("landingStreak")]].map(([v, l], i) => (
                   <div key={i} className="rounded-lg p-2 text-center" style={{ background: "var(--mm-surface-2)" }}>
                     <div style={{ color: "var(--mm-text)", fontSize: "16px", fontWeight: 700 }}>{v}</div>
                     <div style={{ color: "var(--mm-text-3)", fontSize: "10px" }}>{l}</div>
@@ -119,7 +117,7 @@ export function LandingPage({ onPlay, onDaily }: Props) {
         </div>
       </section>
 
-      <div style={{ borderTop: "1px solid var(--mm-border)", borderBottom: "1px solid var(--mm-border)" }}>
+      <div id="landing-stats" style={{ borderTop: "1px solid var(--mm-border)", borderBottom: "1px solid var(--mm-border)" }}>
         <div className="max-w-7xl mx-auto px-6 py-5 grid grid-cols-2 md:grid-cols-4 gap-4">
           {stats.map(s => (
             <div key={s.value} className="text-center">
@@ -130,7 +128,7 @@ export function LandingPage({ onPlay, onDaily }: Props) {
         </div>
       </div>
 
-      <section className="max-w-7xl mx-auto px-6 py-20">
+      <section id="landing-features" className="max-w-7xl mx-auto px-6 py-20">
         <div className="text-center mb-12">
           <h2 style={{ color: "var(--mm-text)", fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 800, marginBottom: "12px" }}>{t("landingSectionTitle")}</h2>
           <p style={{ color: "var(--mm-text-2)", fontSize: "16px" }}>{t("landingSectionSubtitle")}</p>
@@ -148,7 +146,7 @@ export function LandingPage({ onPlay, onDaily }: Props) {
         </div>
       </section>
 
-      <section className="max-w-7xl mx-auto px-6 mb-20">
+      <section id="landing-cta" className="max-w-7xl mx-auto px-6 mb-20">
         <div className="rounded-3xl p-12 text-center relative overflow-hidden" style={{ background: "var(--mm-cta-bg)", border: "1px solid var(--mm-cta-border)" }}>
           <div className="absolute inset-0 pointer-events-none" style={{ background: "transparent" }} />
           <div className="relative">
