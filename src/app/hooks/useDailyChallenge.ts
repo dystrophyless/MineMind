@@ -1,6 +1,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../contexts/AuthContext";
+import { awardProfileXp } from "../services/profileXp";
+import { checkAndUnlockAchievements, type AchievementKey } from "../services/achievements";
 
 export type DailyAttemptStatus = "none" | "in_progress" | "won" | "lost" | "loading";
 
@@ -17,7 +19,7 @@ export type DailyStats = {
   topPlayers: DailyTopPlayer[];
 };
 
-export function useDailyChallenge() {
+export function useDailyChallenge(onNewAchievements?: (keys: AchievementKey[]) => void) {
   const { user } = useAuth();
   const today = new Date().toISOString().slice(0, 10);
 
@@ -91,14 +93,21 @@ export function useDailyChallenge() {
   const completeAttempt = useCallback(async (status: "won" | "lost", timeSeconds: number) => {
     if (!attemptId) return;
 
-    await supabase
+    const { error } = await supabase
       .from("daily_challenge_attempts")
       .update({ status, time_seconds: timeSeconds, completed_at: new Date().toISOString() })
       .eq("id", attemptId);
 
+    if (!error) {
+      awardProfileXp({ mode: "daily", status, timeSeconds });
+      if (user) {
+        const newKeys = await checkAndUnlockAchievements(user.id);
+        if (newKeys.length > 0) onNewAchievements?.(newKeys);
+      }
+    }
     setAttemptStatus(status);
     loadStats();
-  }, [attemptId, loadStats]);
+  }, [attemptId, loadStats, user, onNewAchievements]);
 
   return { attemptStatus, stats, beginAttempt, completeAttempt };
 }

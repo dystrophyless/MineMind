@@ -1,8 +1,12 @@
 export const GAME_MODES = ["classic", "noFlags", "timed", "daily"];
 export const RANKED_GAME_MODES = ["classic", "timed", "noFlags"];
 export const LEADERBOARD_PERIODS = ["allTime", "monthly", "weekly"];
-export const TIMED_MODE_INITIAL_SECONDS = 180;
+export const TIMED_MODE_INITIAL_SECONDS = 60;
 export const TIMED_MODE_BOARD_CLEAR_BONUS_SECONDS = 5;
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
 
 export function applyTimedBoardClear({
   secondsLeft,
@@ -21,6 +25,44 @@ export function countCorrectFlags(board) {
     .flat()
     .filter(cell => cell.isMine && cell.isFlagged)
     .length;
+}
+
+export function calculateXpAward({ mode, status, timeSeconds = null, minesFound = null }) {
+  if (mode === "timed") {
+    return clamp(10 + Math.max(0, minesFound ?? 0) * 6, 10, 250);
+  }
+
+  if (status !== "won") {
+    return mode === "daily" ? 15 : 10;
+  }
+
+  const baseWinXp = mode === "daily" ? 140 : 100;
+  const speedBonus = typeof timeSeconds === "number"
+    ? clamp(160 - timeSeconds, 0, 60)
+    : 0;
+
+  return baseWinXp + speedBonus;
+}
+
+export function getXpLevelProgress(xp) {
+  const safeXp = Math.max(0, Math.floor(xp ?? 0));
+  const thresholds = [0, 100, 250];
+
+  while (thresholds[thresholds.length - 1] <= safeXp) {
+    thresholds.push(thresholds[thresholds.length - 1] * 2);
+  }
+
+  const nextIndex = thresholds.findIndex(threshold => threshold > safeXp);
+  const currentLevelXp = thresholds[nextIndex - 1];
+  const nextLevelXp = thresholds[nextIndex];
+
+  return {
+    level: nextIndex,
+    currentLevelXp,
+    nextLevelXp,
+    progressXp: safeXp - currentLevelXp,
+    requiredXp: nextLevelXp - currentLevelXp,
+  };
 }
 
 function scoreAttempt(attempt, mode) {
@@ -64,4 +106,29 @@ export function getBestLeaderboardRows(attempts, mode, period) {
         scoreLabel: formatScore(score, mode),
       };
     });
+}
+
+export function getPlayerClassicRanks(attempts, profiles, playerId) {
+  const profilesByPlayer = new Map(profiles.map(profile => [profile.playerId, profile]));
+  const classicWins = attempts
+    .filter(attempt =>
+      attempt.mode === "classic" &&
+      attempt.status === "won" &&
+      Number.isFinite(attempt.seconds)
+    )
+    .map(attempt => ({ ...attempt, period: "allTime" }));
+
+  const globalRows = getBestLeaderboardRows(classicWins, "classic", "allTime");
+  const globalIndex = globalRows.findIndex(row => row.playerId === playerId);
+  const globalRank = globalIndex === -1 ? null : globalIndex + 1;
+  const playerCity = profilesByPlayer.get(playerId)?.city ?? null;
+  const cityRank = playerCity
+    ? (() => {
+        const cityRows = globalRows.filter(row => profilesByPlayer.get(row.playerId)?.city === playerCity);
+        const cityIndex = cityRows.findIndex(row => row.playerId === playerId);
+        return cityIndex === -1 ? null : cityIndex + 1;
+      })()
+    : null;
+
+  return { globalRank, cityRank };
 }

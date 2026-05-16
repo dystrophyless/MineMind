@@ -7,6 +7,9 @@ import { MinesweeperBoard } from "./game/MinesweeperBoard";
 import { useGameLogic, BoardPreset } from "./game/useGameLogic";
 import { applyTimedBoardClear, countCorrectFlags, TIMED_MODE_INITIAL_SECONDS } from "./game/gameRules.mjs";
 import { useT } from "../i18n/LocaleProvider";
+import { awardProfileXp } from "../services/profileXp";
+import { checkAndUnlockAchievements } from "../services/achievements";
+import { useAchievementQueue } from "./AchievementToast";
 
 type MobileGameMode = "classic" | "noFlags" | "timed" | "daily";
 
@@ -17,6 +20,7 @@ type Props = {
 export function MobileGame({ initialMode = "classic" }: Props) {
   const t = useT();
   const { user } = useAuth();
+  const { queueAchievements } = useAchievementQueue();
   const savedRef = useRef(false);
   const [mode, setMode] = useState<MobileGameMode>(initialMode);
   const [modeMenuOpen, setModeMenuOpen] = useState(false);
@@ -145,8 +149,16 @@ export function MobileGame({ initialMode = "classic" }: Props) {
         : { time_seconds: time }),
     };
 
-    supabase.from("game_attempts").insert(attempt).then(({ error }) => {
-      if (error) console.error("Failed to save game attempt:", error.message);
+    supabase.from("game_attempts").insert(attempt).then(async ({ error }) => {
+      if (error) { console.error("Failed to save game attempt:", error.message); return; }
+      awardProfileXp({
+        mode,
+        status,
+        timeSeconds: mode === "timed" ? null : time,
+        minesFound: mode === "timed" ? timedMinesFound : null,
+      });
+      const newKeys = await checkAndUnlockAchievements(user!.id);
+      if (newKeys.length > 0) queueAchievements(newKeys);
     });
 
     if (status === "won" && mode !== "timed" && mode !== "daily") {
