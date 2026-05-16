@@ -11,6 +11,7 @@ import { LoginPage } from "./components/LoginPage";
 import { RegisterPage } from "./components/RegisterPage";
 import { OnboardingPage } from "./components/OnboardingPage";
 import { useAuth } from "./contexts/AuthContext";
+import { AchievementProvider } from "./components/AchievementToast";
 
 type Page = "landing" | "game" | "daily" | "leaderboard" | "profile" | "design" | "login" | "register";
 
@@ -75,6 +76,7 @@ export default function App() {
   }
 
   return (
+    <AchievementProvider>
     <div
       className="size-full flex flex-col overflow-auto"
       style={{ background: "var(--mm-bg)", fontFamily: "var(--font-mabry)" }}
@@ -109,5 +111,6 @@ export default function App() {
         <NavBar currentPage={visiblePage} isAuthenticated={isAuthenticated} onNavigate={navigate} />
       </div>
     </div>
+    </AchievementProvider>
   );
 }

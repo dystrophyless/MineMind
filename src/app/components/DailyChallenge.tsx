@@ -4,6 +4,7 @@ import { MinesweeperBoard } from "./game/MinesweeperBoard";
 import { useGameLogic } from "./game/useGameLogic";
 import { useT } from "../i18n/LocaleProvider";
 import { useDailyChallenge } from "../hooks/useDailyChallenge";
+import { useAchievementQueue } from "./AchievementToast";
 
 function RankMedal({ rank }: { rank: number }) {
   if (rank === 1) return <MedalFirstPlaceIcon size={16} color="#F5C060" />;
@@ -15,7 +16,8 @@ function RankMedal({ rank }: { rank: number }) {
 export function DailyChallenge() {
   const t = useT();
   const { board, status, revealCell, toggleFlag, time, formatTime, minesLeft } = useGameLogic("daily");
-  const { attemptStatus, stats, beginAttempt, completeAttempt } = useDailyChallenge();
+  const { queueAchievements } = useAchievementQueue();
+  const { attemptStatus, stats, beginAttempt, completeAttempt } = useDailyChallenge(queueAchievements);
   const today = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric" });
   const formatSecs = (s: number) =>
     `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, "0")}`;
