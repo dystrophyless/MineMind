@@ -7,6 +7,8 @@ import { useProfileStats } from "../hooks/useProfileStats";
 type Props = {
   onPlay: () => void;
   onPlayDaily: () => void;
+  onSignIn: () => void;
+  isAuthenticated: boolean;
 };
 
 const LANDING_BRAIN_IMAGES = {
@@ -26,7 +28,7 @@ function LandingBrainImage() {
     <img
       src={LANDING_BRAIN_IMAGES[theme]}
       alt="Minesweeper brain board illustration"
-      className="w-full max-w-[560px] mx-auto mt-0 mb-4 lg:-mt-12 lg:-mb-16"
+      className="w-full max-w-[560px] mx-auto mt-0 mb-4 lg:-mt-12 lg:-mb-16 pointer-events-none"
       loading="eager"
       decoding="async"
       style={{
@@ -50,7 +52,7 @@ function formatTime(seconds: number | null | undefined) {
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 }
 
-export function LandingPage({ onPlay, onPlayDaily }: Props) {
+export function LandingPage({ onPlay, onPlayDaily, onSignIn, isAuthenticated }: Props) {
   const t = useT();
   const { data: landingStats } = useLandingStats();
   const { data: profileData } = useProfileStats();
@@ -118,16 +120,18 @@ export function LandingPage({ onPlay, onPlayDaily }: Props) {
           <div className="flex-1 flex flex-col items-center gap-4 w-full max-w-xl">
             <LandingBrainImage />
 
-            <div className="w-full rounded-2xl p-4" style={{ background: "var(--mm-surface-1)", border: "1px solid var(--mm-border)" }}>
+            <div className="w-full rounded-2xl p-4 relative z-10" style={{ background: "var(--mm-surface-1)", border: "1px solid var(--mm-border)" }}>
               <div className="flex items-center justify-between mb-3">
                 <span style={{ color: "var(--mm-text)", fontSize: "13px", fontWeight: 600 }}>{t("landingDashboard")}</span>
-                <button
-                  onClick={onPlay}
-                  className="flex items-center gap-1 rounded-lg px-2.5 py-1 transition-all duration-200 hover:brightness-110 active:scale-95"
-                  style={{ background: "var(--mm-action-bg)", color: "var(--mm-action-fg)", fontSize: "11px", fontWeight: 700, fontFamily: "var(--font-mabry)" }}
-                >
-                  {t("navSignIn")} →
-                </button>
+                {!isAuthenticated && (
+                  <button
+                    onClick={onSignIn}
+                    className="flex items-center gap-1 rounded-lg px-2.5 py-1 transition-all duration-200 hover:brightness-110 active:scale-95"
+                    style={{ background: "var(--mm-action-bg)", color: "var(--mm-action-fg)", fontSize: "11px", fontWeight: 700, fontFamily: "var(--font-mabry)" }}
+                  >
+                    {t("navSignIn")} →
+                  </button>
+                )}
               </div>
               <div className="grid grid-cols-3 gap-2 mb-2">
                 {dashboardStats.map((stat) => (

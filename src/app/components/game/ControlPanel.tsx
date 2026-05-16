@@ -1,22 +1,21 @@
 import type { ReactNode } from "react";
-import { StopWatchIcon, BombIcon, FireIcon, ChartUpIcon, ArrowReloadHorizontalIcon, FlashIcon, CrownIcon, DiamondIcon, StarIcon } from "hugeicons-react";
+import { FireIcon, ChartUpIcon, ArrowReloadHorizontalIcon, FlashIcon, CrownIcon, DiamondIcon, StarIcon } from "hugeicons-react";
 import { GameStatus } from "./useGameLogic";
 import { useT } from "../../i18n/LocaleProvider";
+import type { GameLeaderboardSummaryRow } from "../../hooks/useGameLeaderboardSummary";
 
 type GameMode = "classic" | "noFlags" | "timed" | "daily";
 
 type Props = {
   mode: GameMode;
   onModeChange: (mode: GameMode) => void;
-  time: string;
-  minesLeft: number;
   status: GameStatus;
   onRestart: () => void;
   currentStreak: number;
   timedMinesFound?: number;
-  globalRank: number | null;
-  cityRank: number | null;
-  city: string | null;
+  leaderboardRows: GameLeaderboardSummaryRow[];
+  playerRank: number | null;
+  leaderboardLoading: boolean;
   onLeaderboardClick: () => void;
 };
 
@@ -32,7 +31,7 @@ function StatBlock({ icon, label, value, color }: { icon: ReactNode; label: stri
   );
 }
 
-export function ControlPanel({ mode, onModeChange, time, minesLeft, status, onRestart, currentStreak = 0, timedMinesFound = 0, globalRank, cityRank, city, onLeaderboardClick }: Props) {
+export function ControlPanel({ mode, onModeChange, status, onRestart, currentStreak = 0, timedMinesFound = 0, leaderboardRows, playerRank, leaderboardLoading, onLeaderboardClick }: Props) {
   const t = useT();
   const modes: { key: GameMode; label: string }[] = [
     { key: "classic", label: t("mobileModeClassic") },
@@ -58,11 +57,6 @@ export function ControlPanel({ mode, onModeChange, time, minesLeft, status, onRe
       </div>
 
       <div className="flex gap-3">
-        <StatBlock icon={<StopWatchIcon size={13} color="var(--mm-amber)" />} label={t("controlsTime")} value={time} color="var(--mm-amber)" />
-        <StatBlock icon={<BombIcon size={13} color="var(--mm-red)" />} label={t("controlsMines")} value={minesLeft} color="var(--mm-red)" />
-      </div>
-
-      <div className="flex gap-3">
         <StatBlock icon={scoreIcon} label={mode === "timed" ? t("mobileTimedScore") : t("controlsStreak")} value={mode === "timed" ? timedMinesFound : currentStreak} color="var(--mm-amber)" />
       </div>
 
@@ -80,21 +74,28 @@ export function ControlPanel({ mode, onModeChange, time, minesLeft, status, onRe
       <button onClick={onLeaderboardClick} className="w-full rounded-xl p-4 text-left transition-all duration-200 hover:brightness-110 active:scale-[0.99]" style={{ background: "var(--mm-surface-2)", border: "1px solid var(--mm-border-2)" }}>
         <div className="flex items-center gap-2 mb-2">
           <CrownIcon size={14} color="var(--mm-purple)" />
-          <span style={{ color: "var(--mm-purple)", fontSize: "12px", fontWeight: 700 }}>{t("leaderboardTitle")}</span>
+          <span style={{ color: "var(--mm-purple)", fontSize: "12px", fontWeight: 700 }}>{t("leaderboardTitle")} - {modes.find(item => item.key === mode)?.label}</span>
         </div>
-        <div className="grid grid-cols-2 gap-2">
-          <div className="rounded-lg p-2" style={{ background: "var(--mm-surface-1)", border: "1px solid var(--mm-border)" }}>
-            <p style={{ color: "var(--mm-text-3)", fontSize: "10px", textTransform: "uppercase", fontWeight: 700 }}>{t("leaderboardGlobal")}</p>
-            <p style={{ color: "var(--mm-text)", fontSize: "20px", fontWeight: 800, lineHeight: 1.1, marginTop: "6px" }}>
-              {globalRank ? `#${globalRank}` : "—"}
-            </p>
-          </div>
-          <div className="rounded-lg p-2" style={{ background: "var(--mm-surface-1)", border: "1px solid var(--mm-border)" }}>
-            <p style={{ color: "var(--mm-text-3)", fontSize: "10px", textTransform: "uppercase", fontWeight: 700 }}>{city ?? t("leaderboardCity")}</p>
-            <p style={{ color: "var(--mm-text)", fontSize: "20px", fontWeight: 800, lineHeight: 1.1, marginTop: "6px" }}>
-              {cityRank ? `#${cityRank}` : "—"}
-            </p>
-          </div>
+        <div className="rounded-lg p-2 mb-2" style={{ background: "var(--mm-surface-1)", border: "1px solid var(--mm-border)" }}>
+          <p style={{ color: "var(--mm-text-3)", fontSize: "10px", textTransform: "uppercase", fontWeight: 700 }}>{t("leaderboardYourRank")}</p>
+          <p style={{ color: "var(--mm-text)", fontSize: "20px", fontWeight: 800, lineHeight: 1.1, marginTop: "6px" }}>
+            {playerRank ? `#${playerRank}` : "—"}
+          </p>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          {leaderboardLoading ? (
+            <p style={{ color: "var(--mm-text-3)", fontSize: "12px" }}>{t("loading")}</p>
+          ) : leaderboardRows.length === 0 ? (
+            <p style={{ color: "var(--mm-text-3)", fontSize: "12px" }}>{t("noResultsYet")}</p>
+          ) : (
+            leaderboardRows.slice(0, 3).map(row => (
+              <div key={`${row.playerId}-${row.rank}`} className="flex items-center gap-2 rounded-lg px-2 py-1.5" style={{ background: row.isMe ? "var(--mm-amber-glow)" : "var(--mm-surface-1)", border: "1px solid var(--mm-border)" }}>
+                <span style={{ color: "var(--mm-text-3)", fontSize: "11px", fontWeight: 800, width: "24px" }}>#{row.rank}</span>
+                <span className="truncate" style={{ color: row.isMe ? "var(--mm-amber)" : "var(--mm-text)", fontSize: "12px", fontWeight: 700, flex: 1 }}>{row.isMe ? t("leaderboardYou") : row.player}</span>
+                <span style={{ color: "var(--mm-text-2)", fontSize: "11px", fontWeight: 700 }}>{row.scoreLabel}</span>
+              </div>
+            ))
+          )}
         </div>
       </button>
 

@@ -36,6 +36,7 @@ export type ProfileData = {
   xpRequiredXp: number;
   gamesPlayed: number;
   gamesToday: number;
+  wins: number;
   winRate: number;
   winRateChangeThisWeek: number | null;
   bestTimeSeconds: number | null;
@@ -216,6 +217,7 @@ export function useProfileStats() {
         xpRequiredXp: xpProgress.requiredXp,
         gamesPlayed,
         gamesToday,
+        wins,
         winRate,
         winRateChangeThisWeek,
         bestTimeSeconds,

@@ -85,13 +85,13 @@ test("App renders onboarding full-screen for authenticated users missing a profi
   assert.match(source, /<OnboardingPage/);
 });
 
-test("profile and translations use generic city labels with country superscript lookup", () => {
+test("profile rank city badges are removed while translations keep generic city labels", () => {
   const profile = text(PROFILE_STATS);
   const translations = text(TRANSLATIONS);
 
-  assert.match(profile, /CITY_COUNTRY_MAP/);
-  assert.match(profile, /<sup/);
-  assert.match(profile, /cityCode/);
+  assert.doesNotMatch(profile, /CITY_COUNTRY_MAP/);
+  assert.doesNotMatch(profile, /<sup/);
+  assert.doesNotMatch(profile, /cityCode/);
   assert.match(translations, /leaderboardAlmatyRank:\s*"City rank"/);
   assert.match(translations, /leaderboardCity:\s*"City"/);
   assert.doesNotMatch(translations, /leaderboardAlmatyRank:\s*"Almaty rank"/);

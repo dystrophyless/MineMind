@@ -112,7 +112,8 @@ test("landing hero uses downloaded theme-aware brain artwork instead of mini gri
 test("landing hero brain artwork does not overlap dashboard on mobile", () => {
   const landingPage = readFileSync(LANDING_PAGE, "utf8");
 
-  assert.match(landingPage, /className="w-full max-w-\[560px\] mx-auto mt-0 mb-4 lg:-mt-12 lg:-mb-16"/);
+  assert.match(landingPage, /className="w-full max-w-\[560px\] mx-auto mt-0 mb-4 lg:-mt-12 lg:-mb-16 pointer-events-none"/);
+  assert.match(landingPage, /className="w-full rounded-2xl p-4 relative z-10"/);
   assert.doesNotMatch(landingPage, /marginTop:\s*"-48px"/);
   assert.doesNotMatch(landingPage, /marginBottom:\s*"-64px"/);
 });
@@ -205,7 +206,7 @@ test("mobile play page does not render a duplicate top header", () => {
 test("mobile play page centers board area and has mode dropdown", () => {
   const mobileGame = readFileSync(MOBILE_GAME, "utf8");
 
-  assert.match(mobileGame, /useState<MobileGameMode>\("classic"\)/);
+  assert.match(mobileGame, /useState<MobileGameMode>\(initialMode\)/);
   assert.match(mobileGame, /const mobileBoardPreset: BoardPreset = mode === "daily" \? "daily" : "standard"/);
   assert.match(mobileGame, /useGameLogic\(mobileBoardPreset,/);
   assert.match(mobileGame, /allowFlags:\s*mode !== "noFlags"/);
@@ -229,21 +230,16 @@ test("mobile play page centers board area and has mode dropdown", () => {
   assert.match(mobileGame, /background:\s*"var\(--mm-amber-glow\)"/);
   assert.match(mobileGame, /border:\s*"1px solid var\(--mm-border-amber\)"/);
   assert.match(mobileGame, /Object\.entries\(modeLabels\)/);
-  assert.match(mobileGame, /MOBILE_MODE_RATINGS\[mode\]/);
+  assert.match(mobileGame, /bestTime/);
   assert.match(mobileGame, /9 x 9/);
   assert.doesNotMatch(mobileGame, /difficultyLabels/);
   assert.doesNotMatch(mobileGame, /setDifficulty/);
 });
 
-test("mobile game modes replace difficulty modes and keep one rating per mode", () => {
+test("mobile game modes replace difficulty modes", () => {
   const mobileGame = readFileSync(MOBILE_GAME, "utf8");
 
   assert.match(mobileGame, /type MobileGameMode = "classic" \| "noFlags" \| "timed" \| "daily"/);
-  assert.match(mobileGame, /MOBILE_MODE_RATINGS: Record<MobileGameMode, number>/);
-  assert.match(mobileGame, /classic:\s*1240/);
-  assert.match(mobileGame, /noFlags:\s*1180/);
-  assert.match(mobileGame, /timed:\s*1310/);
-  assert.match(mobileGame, /daily:\s*1275/);
   assert.match(mobileGame, /mobileModeClassic/);
   assert.match(mobileGame, /mobileModeNoFlags/);
   assert.match(mobileGame, /mobileModeTimed/);
@@ -257,7 +253,7 @@ test("desktop play page uses the same four 9x9 game modes instead of old difficu
   const dashboard = readFileSync(GAME_DASHBOARD, "utf8");
   const controls = readFileSync(CONTROL_PANEL, "utf8");
 
-  assert.match(dashboard, /useState<GameMode>\("classic"\)/);
+  assert.match(dashboard, /useState<GameMode>\(initialMode\)/);
   assert.match(dashboard, /const gameBoardPreset: BoardPreset = mode === "daily" \? "daily" : "standard"/);
   assert.match(dashboard, /useGameLogic\(gameBoardPreset,/);
   assert.match(dashboard, /allowFlags:\s*mode !== "noFlags"/);
@@ -287,7 +283,7 @@ test("daily game mode stays in-place on mobile and desktop", () => {
   const controls = readFileSync(CONTROL_PANEL, "utf8");
   const mobileGame = readFileSync(MOBILE_GAME, "utf8");
 
-  assert.match(app, /<MobileGame \/>/);
+  assert.match(app, /<MobileGame initialMode=\{gameInitialMode\} \/>/);
   assert.doesNotMatch(dashboard, /onDailyMode=\{\(\) => onNavigate\("daily"\)\}/);
   assert.doesNotMatch(controls, /onDailyMode/);
   assert.match(controls, /onModeChange\(nextMode\);/);
@@ -301,11 +297,12 @@ test("timed mode rules are visible in mobile and desktop game surfaces", () => {
   const dashboard = readFileSync(GAME_DASHBOARD, "utf8");
 
   for (const [name, text] of [["MobileGame", mobileGame], ["GameDashboard", dashboard]]) {
-    assert.match(text, /TIMED_MODE_INITIAL_SECONDS/, `${name} should start timed mode at three minutes`);
+    assert.match(text, /TIMED_MODE_INITIAL_SECONDS/, `${name} should start timed mode from the shared rule`);
     assert.match(text, /mode !== "timed" \|\| status !== "playing"/, `${name} should start timed countdown only after the first reveal`);
     assert.match(text, /applyTimedBoardClear/, `${name} should add timed bonus and score cleared boards`);
     assert.match(text, /countCorrectFlags/, `${name} should score only correctly flagged mines`);
-    assert.match(text, /endGame\(\)/, `${name} should end when the timed countdown reaches zero`);
+    assert.match(text, /getTimedTimeoutResult/, `${name} should turn timed timeout into a scored survival result`);
+    assert.match(text, /endGame\(result\.status\)/, `${name} should finish with the timed survival status`);
     assert.match(text, /timedMinesFound/, `${name} should show timed mine score`);
   }
 }
@@ -333,7 +330,6 @@ test("leaderboard splits ranked results by game mode and period", () => {
   assert.match(leaderboard, /leaderboardCity/);
   assert.match(leaderboard, /RANKED_GAME_MODES/);
   assert.match(leaderboard, /LEADERBOARD_PERIODS/);
-  assert.match(leaderboard, /getBestLeaderboardRows/);
   assert.match(leaderboard, /leaderboardModeClassic/);
   assert.match(leaderboard, /leaderboardModeTimed/);
   assert.match(leaderboard, /leaderboardModeNoFlags/);
@@ -401,18 +397,18 @@ test("nav destination pages use leaderboard outer padding", () => {
   }
 });
 
-test("profile hero removes pro avatar ornament and uses refined rank badges", () => {
+test("profile hero removes rank badges and keeps mobile identity compact", () => {
   const profileStats = readFileSync(PROFILE_STATS, "utf8");
 
   assert.doesNotMatch(profileStats, /DiamondIcon/);
   assert.doesNotMatch(profileStats, /-top-1 -right-1/);
-  assert.match(profileStats, /function ProfileRankBadge/);
-  assert.match(profileStats, /h-8 rounded-full px-3/);
-  assert.match(profileStats, /#\{profileData\.globalRank\} \{t\("leaderboardGlobal"\)\}/);
-  assert.match(profileStats, /<CityWithCode city=\{profileData\.city\} \/>/);
-  assert.match(profileStats, /CITY_COUNTRY_MAP/);
-  assert.match(profileStats, /--mm-pro-badge-bg/);
-  assert.match(profileStats, /--mm-nav-control-bg/);
+  assert.doesNotMatch(profileStats, /function ProfileRankBadge/);
+  assert.doesNotMatch(profileStats, /profileData\.globalRank/);
+  assert.doesNotMatch(profileStats, /profileData\.cityRank/);
+  assert.doesNotMatch(profileStats, /leaderboardGlobal/);
+  assert.match(profileStats, /profile-identity-row flex items-start gap-4/);
+  assert.match(profileStats, /profile-signout-button h-10 w-10/);
+  assert.match(profileStats, /<span className="hidden sm:inline">\{t\("profileSignOut"\)\}<\/span>/);
 });
 
 test("accuracy metric is removed from visible product surfaces", () => {

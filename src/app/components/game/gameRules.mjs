@@ -65,6 +65,13 @@ export function getXpLevelProgress(xp) {
   };
 }
 
+export function getTimedTimeoutResult({ board, minesFound }) {
+  return {
+    status: "won",
+    minesFound: Math.max(0, minesFound ?? 0) + countCorrectFlags(board),
+  };
+}
+
 function scoreAttempt(attempt, mode) {
   return mode === "timed" ? attempt.mines : attempt.seconds;
 }

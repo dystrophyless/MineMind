@@ -8,6 +8,7 @@ import { supabase } from "../../lib/supabase";
 type Props = {
   onLogin: () => void;
   onGoRegister: () => void;
+  onGoHome: () => void;
 };
 
 type FormData = {
@@ -16,9 +17,14 @@ type FormData = {
   remember: boolean;
 };
 
-function BrandMark() {
+function BrandMark({ onClick }: { onClick: () => void }) {
   return (
-    <div className="flex items-center gap-3">
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex items-center gap-3 cursor-pointer"
+      style={{ background: "none", border: "none", padding: 0 }}
+    >
       <div
         className="w-9 h-9 rounded-lg flex items-center justify-center"
         style={{
@@ -32,7 +38,7 @@ function BrandMark() {
       <span style={{ color: "var(--mm-text)", fontSize: "20px", fontWeight: 800 }}>
         Mine<span style={{ color: "var(--mm-brand-text-accent)" }}>Mind</span>
       </span>
-    </div>
+    </button>
   );
 }
 
@@ -95,7 +101,7 @@ function StyledInput({
   );
 }
 
-export function LoginPage({ onLogin, onGoRegister }: Props) {
+export function LoginPage({ onLogin, onGoRegister, onGoHome }: Props) {
   const [showPass, setShowPass] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -130,7 +136,7 @@ export function LoginPage({ onLogin, onGoRegister }: Props) {
       >
         <div>
           <div className="mb-16">
-            <BrandMark />
+            <BrandMark onClick={onGoHome} />
           </div>
 
           <h2 style={{ color: "var(--mm-text)", fontSize: "32px", fontWeight: 800, lineHeight: 1.15, marginBottom: "16px" }}>
@@ -168,7 +174,7 @@ export function LoginPage({ onLogin, onGoRegister }: Props) {
       <main className="flex-1 flex flex-col items-center justify-center px-6 py-12 overflow-auto">
         <div className="w-full max-w-sm">
           <div className="mb-10 lg:hidden">
-            <BrandMark />
+            <BrandMark onClick={onGoHome} />
           </div>
 
           <div className="mb-8">

@@ -9,6 +9,7 @@ import { CityPicker } from "./CityPicker";
 type Props = {
   onRegister: () => void;
   onGoLogin: () => void;
+  onGoHome: () => void;
 };
 
 type RegisterStep = "credentials" | "code" | "username" | "city";
@@ -23,9 +24,14 @@ type FormData = {
 
 const CODE_LENGTH = 6;
 
-export function BrandMark() {
+export function BrandMark({ onClick }: { onClick: () => void }) {
   return (
-    <div className="flex items-center gap-3">
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex items-center gap-3 cursor-pointer"
+      style={{ background: "none", border: "none", padding: 0 }}
+    >
       <div
         className="w-9 h-9 rounded-lg flex items-center justify-center"
         style={{
@@ -39,7 +45,7 @@ export function BrandMark() {
       <span style={{ color: "var(--mm-text)", fontSize: "20px", fontWeight: 800 }}>
         Mine<span style={{ color: "var(--mm-brand-text-accent)" }}>Mind</span>
       </span>
-    </div>
+    </button>
   );
 }
 
@@ -110,7 +116,7 @@ export function StyledInput({
   );
 }
 
-export function RegisterPage({ onRegister, onGoLogin }: Props) {
+export function RegisterPage({ onRegister, onGoLogin, onGoHome }: Props) {
   const [step, setStep] = useState<RegisterStep>("credentials");
   const [showPass, setShowPass] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -268,7 +274,7 @@ export function RegisterPage({ onRegister, onGoLogin }: Props) {
       >
         <div>
           <div className="mb-14">
-            <BrandMark />
+            <BrandMark onClick={onGoHome} />
           </div>
 
           <h2 style={{ color: "var(--mm-text)", fontSize: "30px", fontWeight: 800, lineHeight: 1.2, marginBottom: "14px" }}>
@@ -305,7 +311,7 @@ export function RegisterPage({ onRegister, onGoLogin }: Props) {
       <main className="flex-1 flex flex-col items-center justify-center px-6 py-12 overflow-auto">
         <div className="w-full max-w-sm">
           <div className="mb-10 lg:hidden">
-            <BrandMark />
+            <BrandMark onClick={onGoHome} />
           </div>
 
           <div className="mb-8">

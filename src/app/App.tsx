@@ -62,6 +62,7 @@ export default function App() {
       <LoginPage
         onLogin={completeAuth}
         onGoRegister={() => navigate("register")}
+        onGoHome={() => navigate("landing")}
       />
     );
   }
@@ -71,6 +72,7 @@ export default function App() {
       <RegisterPage
         onRegister={completeAuth}
         onGoLogin={() => navigate("login")}
+        onGoHome={() => navigate("landing")}
       />
     );
   }
@@ -92,6 +94,8 @@ export default function App() {
           <LandingPage
             onPlay={() => { setGameInitialMode("classic"); navigate("game"); }}
             onPlayDaily={() => { setGameInitialMode("daily"); navigate("game"); }}
+            onSignIn={() => navigate("login")}
+            isAuthenticated={isAuthenticated}
           />
         )}
         {visiblePage === "game" && isMobile && <MobileGame initialMode={gameInitialMode} />}

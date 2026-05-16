@@ -22,10 +22,11 @@ test("game dashboard removes daily and stats cards and moves rating into the sid
   assert.match(panel, /onLeaderboardClick/);
   assert.match(panel, /leaderboardTitle/);
   assert.doesNotMatch(panel, /const rankSubtitle/);
-  assert.match(panel, /t\("leaderboardGlobal"\)/);
-  assert.match(panel, /globalRank \? `#\$\{globalRank\}` : "—"/);
-  assert.match(panel, /\{city \?\? t\("leaderboardCity"\)\}/);
-  assert.match(panel, /cityRank \? `#\$\{cityRank\}` : "—"/);
+  assert.match(panel, /leaderboardRows\.slice\(0, 3\)/);
+  assert.match(panel, /playerRank \? `#\$\{playerRank\}` : "—"/);
+  assert.match(panel, /leaderboardYourRank/);
+  assert.doesNotMatch(panel, /globalRank/);
+  assert.doesNotMatch(panel, /cityRank/);
   assert.match(panel, /controlsUpgrade/);
   assert.match(panel, /controlsGoPro/);
   assert.match(translations, /leaderboardGlobal: "Глобально"/);

@@ -118,10 +118,10 @@ export function useGameLogic(boardPreset: BoardPreset, options: GameLogicOptions
     setFlagCount(0);
   }, [config.rows, config.cols]);
 
-  const endGame = useCallback(() => {
+  const endGame = useCallback((nextStatus: GameStatus = "lost") => {
     if (timerRef.current) clearInterval(timerRef.current);
     setBoard(prev => prev.map(row => row.map(cell => cell.isMine ? { ...cell, isRevealed: true } : cell)));
-    setStatus("lost");
+    setStatus(nextStatus);
   }, []);
 
   useEffect(() => {

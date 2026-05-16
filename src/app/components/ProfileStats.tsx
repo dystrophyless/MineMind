@@ -1,11 +1,10 @@
-import { StopWatchIcon, FireIcon, ChartUpIcon, CrownIcon, BombIcon, FlashIcon } from "hugeicons-react";
+import { StopWatchIcon, FireIcon, ChartUpIcon, BombIcon, FlashIcon } from "hugeicons-react";
 import { Hexagon, LogOutIcon } from "lucide-react";
 import { useT, useLocale } from "../i18n/LocaleProvider";
 import type { ReactNode } from "react";
 import type { TranslationKey } from "../i18n/translations";
 import { useProfileStats } from "../hooks/useProfileStats";
 import { SettingsControls } from "./SettingsControls";
-import { CITY_COUNTRY_MAP } from "../data/cities";
 import { useAuth } from "../contexts/AuthContext";
 import { ACHIEVEMENT_DEFS } from "../services/achievements";
 
@@ -31,39 +30,6 @@ function ProgressBar({ value, max, color }: { value: number; max: number; color:
     <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "var(--mm-surface-3)" }}>
       <div className="h-full rounded-full transition-all duration-700" style={{ width: `${(value / max) * 100}%`, background: color, boxShadow: `0 0 8px ${color}50` }} />
     </div>
-  );
-}
-
-function ProfileRankBadge({ children, icon, tone }: { children: ReactNode; icon?: ReactNode; tone: "global" | "city" }) {
-  const isGlobal = tone === "global";
-
-  return (
-    <div
-      className="h-8 rounded-full px-3 flex items-center gap-1.5 shrink-0"
-      style={{
-        background: isGlobal ? "var(--mm-pro-badge-bg)" : "var(--mm-nav-control-bg)",
-        border: `1px solid ${isGlobal ? "var(--mm-pro-badge-border)" : "var(--mm-nav-control-border)"}`,
-        color: isGlobal ? "var(--mm-pro-badge-fg)" : "var(--mm-text-2)",
-      }}
-    >
-      {icon}
-      <span style={{ fontSize: "12px", fontWeight: isGlobal ? 800 : 700, lineHeight: 1 }}>{children}</span>
-    </div>
-  );
-}
-
-function CityWithCode({ city }: { city: string }) {
-  const cityCode = CITY_COUNTRY_MAP[city];
-
-  return (
-    <>
-      {city}
-      {cityCode && (
-        <sup style={{ color: "var(--mm-text-3)", fontSize: "9px", fontWeight: 800, marginLeft: "2px" }}>
-          {cityCode}
-        </sup>
-      )}
-    </>
   );
 }
 
@@ -106,12 +72,12 @@ export function ProfileStats() {
   })() as Parameters<typeof t>[0];
 
   const winRateChange = profileData.winRateChangeThisWeek;
-  const winRateChangeText = winRateChange !== null
+  const winRateDetailText = winRateChange !== null
     ? `${winRateChange >= 0 ? "+" : ""}${winRateChange}% ${t("profileThisWeek")}`
-    : "—";
+    : `${profileData.wins.toLocaleString()} ${t("profileWins")} / ${profileData.gamesPlayed.toLocaleString()} ${t("profileGames")}`;
 
   const mainStats = [
-    { label: t("landingWinRate"), value: `${profileData.winRate}%`, icon: <ChartUpIcon size={16} color="var(--mm-green)" />, color: "var(--mm-green)", change: winRateChangeText },
+    { label: t("landingWinRate"), value: `${profileData.winRate}%`, icon: <ChartUpIcon size={16} color="var(--mm-green)" />, color: "var(--mm-green)", change: winRateDetailText },
     { label: t("profileGamesPlayed"), value: profileData.gamesPlayed.toLocaleString(), icon: <ChartUpIcon size={16} color="var(--mm-blue)" />, color: "var(--mm-blue)", change: `+${profileData.gamesToday} ${t("profileToday")}` },
     { label: t("landingBestTime"), value: profileData.bestTimeSeconds ? formatTime(profileData.bestTimeSeconds) : "—", icon: <StopWatchIcon size={16} color="var(--mm-amber)" />, color: "var(--mm-amber)", change: t("mobileModeClassic") },
     { label: t("profileCurrentStreak"), value: profileData.currentStreak.toString(), icon: <FireIcon size={16} color="var(--mm-red)" />, color: "var(--mm-red)", change: `${t("profilePersonalBest")} ${profileData.bestStreak}` },
@@ -163,50 +129,47 @@ export function ProfileStats() {
           <SettingsControls compact />
         </div>
 
-        <div className="rounded-2xl p-6 mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-5" style={{ background: "var(--mm-surface-1)", border: "1px solid var(--mm-border)" }}>
-          <div className="w-20 h-20 rounded-2xl flex items-center justify-center shrink-0" style={{ background: "var(--mm-action-bg)", boxShadow: "var(--mm-action-shadow)" }}>
-            <span style={{ color: "var(--mm-action-fg)", fontSize: "32px", fontWeight: 800 }}>{profileData.avatarInitial}</span>
-          </div>
-
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1 flex-wrap">
-              <h1 style={{ color: "var(--mm-text)", fontSize: "24px", fontWeight: 800 }}>{profileData.username}</h1>
-              {profileData.gamesPlayed > 0 && profileData.globalRank != null && (
-                <ProfileRankBadge tone="global" icon={<CrownIcon size={12} color="currentColor" />}>
-                  #{profileData.globalRank} {t("leaderboardGlobal")}
-                </ProfileRankBadge>
-              )}
-              {profileData.gamesPlayed > 0 && profileData.cityRank != null && profileData.city && (
-                <ProfileRankBadge tone="city">#{profileData.cityRank} {t("profileCityIn")} <CityWithCode city={profileData.city} /></ProfileRankBadge>
-              )}
+        <div className="rounded-2xl p-5 sm:p-6 mb-6" style={{ background: "var(--mm-surface-1)", border: "1px solid var(--mm-border)" }}>
+          <div className="profile-identity-row flex items-start gap-4">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center shrink-0" style={{ background: "var(--mm-action-bg)", boxShadow: "var(--mm-action-shadow)" }}>
+              <span style={{ color: "var(--mm-action-fg)", fontSize: "32px", fontWeight: 800 }}>{profileData.avatarInitial}</span>
             </div>
-            <p style={{ color: "var(--mm-text-2)", fontSize: "13px", marginBottom: "12px" }}>{memberSinceText}</p>
-            <div>
-              <div className="flex justify-between mb-1.5">
-                <span style={{ color: "var(--mm-text-3)", fontSize: "11px" }}>{t("profileLevel")} {profileData.level} — {t(levelTitleKey)}</span>
-                <span style={{ color: "var(--mm-amber)", fontSize: "11px" }}>{`${profileData.xp.toLocaleString()} / ${profileData.nextLevelXp.toLocaleString()} XP`}</span>
+
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h1 style={{ color: "var(--mm-text)", fontSize: "24px", fontWeight: 800, lineHeight: 1.1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{profileData.username}</h1>
+                  <p style={{ color: "var(--mm-text-2)", fontSize: "13px", marginTop: "6px" }}>{memberSinceText}</p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={signOut}
+                  aria-label={t("profileSignOut")}
+                  className="profile-signout-button h-10 w-10 sm:w-auto sm:px-3.5 rounded-xl flex items-center justify-center sm:justify-start gap-2 shrink-0 transition-colors duration-200 hover:brightness-110"
+                  style={{
+                    background: "var(--mm-surface-2)",
+                    border: "1px solid var(--mm-border-2)",
+                    color: "var(--mm-red)",
+                    fontSize: "13px",
+                    fontWeight: 800,
+                    fontFamily: "var(--font-mabry)",
+                  }}
+                >
+                  <LogOutIcon size={15} strokeWidth={2.4} />
+                  <span className="hidden sm:inline">{t("profileSignOut")}</span>
+                </button>
               </div>
-              <ProgressBar value={profileData.xpProgressXp} max={profileData.xpRequiredXp} color="var(--mm-amber)" />
+
+              <div className="mt-5">
+                <div className="flex justify-between mb-1.5">
+                  <span style={{ color: "var(--mm-text-3)", fontSize: "11px" }}>{t("profileLevel")} {profileData.level} — {t(levelTitleKey)}</span>
+                  <span style={{ color: "var(--mm-amber)", fontSize: "11px" }}>{`${profileData.xp.toLocaleString()} / 10,000 XP`}</span>
+                </div>
+                <ProgressBar value={profileData.xp} max={10000} color="var(--mm-amber)" />
+              </div>
             </div>
           </div>
-
-          <button
-            type="button"
-            onClick={signOut}
-            aria-label={t("profileSignOut")}
-            className="h-10 rounded-xl px-3.5 flex items-center gap-2 shrink-0 transition-colors duration-200 hover:brightness-110"
-            style={{
-              background: "var(--mm-surface-2)",
-              border: "1px solid var(--mm-border-2)",
-              color: "var(--mm-red)",
-              fontSize: "13px",
-              fontWeight: 800,
-              fontFamily: "var(--font-mabry)",
-            }}
-          >
-            <LogOutIcon size={15} strokeWidth={2.4} />
-            <span>{t("profileSignOut")}</span>
-          </button>
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">

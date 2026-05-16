@@ -25,6 +25,7 @@ export function useDailyChallenge(onNewAchievements?: (keys: AchievementKey[]) =
 
   const [attemptStatus, setAttemptStatus] = useState<DailyAttemptStatus>("loading");
   const [attemptId, setAttemptId] = useState<string | null>(null);
+  const [attemptBlockReason, setAttemptBlockReason] = useState<"dailyAttemptAlreadyUsed" | null>(null);
   const [stats, setStats] = useState<DailyStats>({ totalAttempts: 0, bestTimeToday: null, topPlayers: [] });
 
   const loadStats = useCallback(async () => {
@@ -57,17 +58,20 @@ export function useDailyChallenge(onNewAchievements?: (keys: AchievementKey[]) =
   }, [today]);
 
   const loadAttempt = useCallback(async () => {
-    if (!user) { setAttemptStatus("none"); return; }
+    if (!user) { setAttemptStatus("none"); setAttemptId(null); return null; }
 
     const { data } = await supabase
       .from("daily_challenge_attempts")
       .select("id, status")
       .eq("user_id", user.id)
       .eq("challenge_date", today)
-      .maybeSingle();
+      .order("started_at", { ascending: false })
+      .limit(1);
 
-    setAttemptStatus(data ? (data.status as DailyAttemptStatus) : "none");
-    setAttemptId(data?.id ?? null);
+    const latestAttempt = data?.[0] ?? null;
+    setAttemptStatus(latestAttempt ? (latestAttempt.status as DailyAttemptStatus) : "none");
+    setAttemptId(latestAttempt?.id ?? null);
+    return latestAttempt;
   }, [user, today]);
 
   useEffect(() => {
@@ -76,7 +80,17 @@ export function useDailyChallenge(onNewAchievements?: (keys: AchievementKey[]) =
   }, [loadAttempt, loadStats]);
 
   const beginAttempt = useCallback(async (): Promise<boolean> => {
-    if (!user || attemptStatus !== "none") return false;
+    if (!user) return false;
+    if (attemptStatus !== "none") {
+      setAttemptBlockReason("dailyAttemptAlreadyUsed");
+      return false;
+    }
+
+    const existingAttempt = await loadAttempt();
+    if (existingAttempt) {
+      setAttemptBlockReason("dailyAttemptAlreadyUsed");
+      return false;
+    }
 
     const { data, error } = await supabase
       .from("daily_challenge_attempts")
@@ -84,11 +98,16 @@ export function useDailyChallenge(onNewAchievements?: (keys: AchievementKey[]) =
       .select("id")
       .single();
 
-    if (error) return false;
+    if (error) {
+      setAttemptBlockReason("dailyAttemptAlreadyUsed");
+      await loadAttempt();
+      return false;
+    }
+
     setAttemptId(data.id);
     setAttemptStatus("in_progress");
     return true;
-  }, [user, today, attemptStatus]);
+  }, [user, today, attemptStatus, loadAttempt]);
 
   const completeAttempt = useCallback(async (status: "won" | "lost", timeSeconds: number) => {
     if (!attemptId) return;
@@ -109,5 +128,7 @@ export function useDailyChallenge(onNewAchievements?: (keys: AchievementKey[]) =
     loadStats();
   }, [attemptId, loadStats, user, onNewAchievements]);
 
-  return { attemptStatus, stats, beginAttempt, completeAttempt };
+  const clearAttemptBlockReason = useCallback(() => setAttemptBlockReason(null), []);
+
+  return { attemptStatus, attemptBlockReason, stats, beginAttempt, completeAttempt, clearAttemptBlockReason };
 }

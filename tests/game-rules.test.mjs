@@ -4,6 +4,7 @@ import { test } from "node:test";
 import {
   applyTimedBoardClear,
   calculateXpAward,
+  getTimedTimeoutResult,
   getBestLeaderboardRows,
   getPlayerClassicRanks,
   getXpLevelProgress,
@@ -18,6 +19,26 @@ test("timed mode starts at 1 minute and adds 5 seconds after a cleared board", (
   assert.deepEqual(
     applyTimedBoardClear({ secondsLeft: 37, minesFound: 23, correctFlags: 4 }),
     { secondsLeft: 42, minesFound: 27 }
+  );
+});
+
+test("timed timeout is a victory and includes correctly flagged mines in the final score", () => {
+  const board = [
+    [
+      { isMine: true, isFlagged: true },
+      { isMine: true, isFlagged: false },
+      { isMine: false, isFlagged: true },
+    ],
+    [
+      { isMine: true, isFlagged: true },
+      { isMine: false, isFlagged: false },
+      { isMine: false, isFlagged: false },
+    ],
+  ];
+
+  assert.deepEqual(
+    getTimedTimeoutResult({ board, minesFound: 7 }),
+    { status: "won", minesFound: 9 }
   );
 });
 

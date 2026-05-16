@@ -5,11 +5,14 @@ import { BombIcon, StopWatchIcon, ArrowReloadHorizontalIcon } from "hugeicons-re
 import { ChevronDownIcon } from "lucide-react";
 import { MinesweeperBoard } from "./game/MinesweeperBoard";
 import { useGameLogic, BoardPreset } from "./game/useGameLogic";
-import { applyTimedBoardClear, countCorrectFlags, TIMED_MODE_INITIAL_SECONDS } from "./game/gameRules.mjs";
+import { applyTimedBoardClear, countCorrectFlags, getTimedTimeoutResult, TIMED_MODE_INITIAL_SECONDS } from "./game/gameRules.mjs";
 import { useT } from "../i18n/LocaleProvider";
 import { awardProfileXp } from "../services/profileXp";
 import { checkAndUnlockAchievements } from "../services/achievements";
 import { useAchievementQueue } from "./AchievementToast";
+import { useDailyChallenge } from "../hooks/useDailyChallenge";
+import { GameResultModal } from "./game/GameResultModal";
+import { DailyAttemptModal } from "./game/DailyAttemptModal";
 
 type MobileGameMode = "classic" | "noFlags" | "timed" | "daily";
 
@@ -21,13 +24,18 @@ export function MobileGame({ initialMode = "classic" }: Props) {
   const t = useT();
   const { user } = useAuth();
   const { queueAchievements } = useAchievementQueue();
+  const dailyCompleteRef = useRef(false);
   const savedRef = useRef(false);
   const [mode, setMode] = useState<MobileGameMode>(initialMode);
   const [modeMenuOpen, setModeMenuOpen] = useState(false);
+  const [resultModalOpen, setResultModalOpen] = useState(false);
+  const [dailyAttemptModalOpen, setDailyAttemptModalOpen] = useState(false);
   const [timedSecondsLeft, setTimedSecondsLeft] = useState(TIMED_MODE_INITIAL_SECONDS);
   const [timedMinesFound, setTimedMinesFound] = useState(0);
+  const [timedRunEnded, setTimedRunEnded] = useState(false);
   const [timedBest, setTimedBest] = useState(0);
   const [bestTime, setBestTime] = useState<number | null>(null);
+  const { attemptStatus, attemptBlockReason, beginAttempt, completeAttempt, clearAttemptBlockReason } = useDailyChallenge();
   const mobileBoardPreset: BoardPreset = mode === "daily" ? "daily" : "standard";
   const { board, status, time, formatTime, minesLeft, revealCell, toggleFlag, resetGame, endGame } = useGameLogic(mobileBoardPreset, {
     allowFlags: mode !== "noFlags",
@@ -41,16 +49,43 @@ export function MobileGame({ initialMode = "classic" }: Props) {
   const resetTimedRun = () => {
     setTimedSecondsLeft(TIMED_MODE_INITIAL_SECONDS);
     setTimedMinesFound(0);
+    setTimedRunEnded(false);
   };
   const restartGame = () => {
+    setResultModalOpen(false);
     resetGame();
     resetTimedRun();
   };
   const selectMode = (nextMode: MobileGameMode) => {
     setMode(nextMode);
     setModeMenuOpen(false);
+    setResultModalOpen(false);
+    if (nextMode === "daily" && (attemptStatus === "won" || attemptStatus === "lost")) {
+      setDailyAttemptModalOpen(true);
+    }
     resetGame();
     resetTimedRun();
+  };
+  const handleReveal = (row: number, col: number) => {
+    if (mode !== "daily" || status !== "idle") {
+      revealCell(row, col);
+      return;
+    }
+
+    if (attemptStatus === "loading") return;
+    if (attemptStatus !== "none" && attemptStatus !== "in_progress") {
+      setDailyAttemptModalOpen(true);
+      return;
+    }
+    if (attemptStatus === "in_progress") {
+      revealCell(row, col);
+      return;
+    }
+
+    beginAttempt().then((started) => {
+      if (started) revealCell(row, col);
+      else setDailyAttemptModalOpen(true);
+    });
   };
   const timerText = mode === "timed" ? formatTime(timedSecondsLeft) : formatTime(time);
   const resultText = status === "won"
@@ -95,8 +130,11 @@ export function MobileGame({ initialMode = "classic" }: Props) {
     const interval = window.setInterval(() => {
       setTimedSecondsLeft(seconds => {
         if (seconds <= 1) {
-          endGame();
-          setTimedBest(best => Math.max(best, timedMinesFound));
+          const result = getTimedTimeoutResult({ board, minesFound: timedMinesFound });
+          setTimedMinesFound(result.minesFound);
+          setTimedBest(best => Math.max(best, result.minesFound));
+          setTimedRunEnded(true);
+          endGame(result.status);
           return 0;
         }
         return seconds - 1;
@@ -104,10 +142,10 @@ export function MobileGame({ initialMode = "classic" }: Props) {
     }, 1000);
 
     return () => window.clearInterval(interval);
-  }, [endGame, mode, status, timedMinesFound]);
+  }, [board, endGame, mode, status, timedMinesFound]);
 
   useEffect(() => {
-    if (mode !== "timed" || status !== "won") return;
+    if (mode !== "timed" || status !== "won" || timedRunEnded) return;
 
     const nextRun = applyTimedBoardClear({
       secondsLeft: timedSecondsLeft,
@@ -118,7 +156,7 @@ export function MobileGame({ initialMode = "classic" }: Props) {
     setTimedMinesFound(nextRun.minesFound);
     setTimedBest(best => Math.max(best, nextRun.minesFound));
     resetGame();
-  }, [board, mode, resetGame, status, timedMinesFound, timedSecondsLeft]);
+  }, [board, mode, resetGame, status, timedMinesFound, timedRunEnded, timedSecondsLeft]);
 
   useEffect(() => {
     if (mode === "timed" && status === "lost") {
@@ -127,14 +165,31 @@ export function MobileGame({ initialMode = "classic" }: Props) {
   }, [mode, status, timedMinesFound]);
 
   useEffect(() => {
+    if (mode !== "daily" || status === "idle" || status === "playing") {
+      if (mode === "daily") dailyCompleteRef.current = false;
+      return;
+    }
+    if (dailyCompleteRef.current) return;
+
+    dailyCompleteRef.current = true;
+    completeAttempt(status, time);
+  }, [completeAttempt, mode, status, time]);
+
+  useEffect(() => {
+    if (status === "idle" || status === "playing") return;
+    if (mode === "timed" && status === "won" && !timedRunEnded) return;
+    setResultModalOpen(true);
+  }, [mode, status, timedRunEnded]);
+
+  useEffect(() => {
     if (status === "idle" || status === "playing") {
       savedRef.current = false;
       return;
     }
     if (savedRef.current || !user) return;
 
-    // Skip saving individual boards in timed mode — only save when the run ends (status === "lost")
-    if (mode === "timed" && status === "won") return;
+    // Skip saving individual boards in timed mode; save only the 60-second survival result.
+    if (mode === "timed" && status === "won" && !timedRunEnded) return;
     // Skip daily — handled separately
     if (mode === "daily") return;
 
@@ -164,7 +219,7 @@ export function MobileGame({ initialMode = "classic" }: Props) {
     if (status === "won" && mode !== "timed" && mode !== "daily") {
       setBestTime(prev => prev === null || time < prev ? time : prev);
     }
-  }, [status, mode, user, time, timedMinesFound]);
+  }, [status, mode, user, time, timedMinesFound, timedRunEnded]);
 
   return (
     <div className="relative flex min-h-[100dvh] flex-col select-none overflow-hidden" style={{ background: "var(--mm-bg)", maxWidth: "430px", margin: "0 auto" }}>
@@ -273,7 +328,7 @@ export function MobileGame({ initialMode = "classic" }: Props) {
       <div className="flex-1 grid place-items-center px-4 py-4 overflow-auto">
         <div className="w-full pb-[calc(88px+env(safe-area-inset-bottom))]">
           <div className="flex w-full flex-col items-center justify-center gap-6">
-            <MinesweeperBoard board={board} status={status} onReveal={revealCell} onFlag={toggleFlag} mobileCompact flagsEnabled={mode !== "noFlags"} />
+            <MinesweeperBoard board={board} status={status} onReveal={handleReveal} onFlag={toggleFlag} mobileCompact flagsEnabled={mode !== "noFlags"} />
 
             {status !== "idle" && status !== "playing" && (
               <div className="w-full rounded-xl py-3 px-4 text-center" style={{ background: status === "won" ? "var(--mm-green-glow)" : "var(--mm-red-glow)", border: `1px solid ${status === "won" ? "rgba(76,217,123,0.3)" : "rgba(229,90,90,0.3)"}` }}>
@@ -287,6 +342,22 @@ export function MobileGame({ initialMode = "classic" }: Props) {
           </div>
         </div>
       </div>
+      <GameResultModal
+        open={resultModalOpen}
+        onOpenChange={setResultModalOpen}
+        status={status === "won" ? "won" : "lost"}
+        mode={mode}
+        timeLabel={timerText}
+        minesFound={timedMinesFound}
+        onRestart={restartGame}
+      />
+      <DailyAttemptModal
+        open={dailyAttemptModalOpen || attemptBlockReason === "dailyAttemptAlreadyUsed"}
+        onOpenChange={(open) => {
+          setDailyAttemptModalOpen(open);
+          if (!open) clearAttemptBlockReason();
+        }}
+      />
     </div>
   );
 }
