@@ -1,4 +1,4 @@
-import { useCallback, type CSSProperties } from "react";
+import { useCallback, useEffect, useRef, type CSSProperties } from "react";
 import { BombIcon, RacingFlagIcon } from "hugeicons-react";
 import { CellState, GameStatus, NUMBER_COLORS } from "./useGameLogic";
 
@@ -36,13 +36,49 @@ function Cell({
   mobileCompact?: boolean;
   flagsEnabled: boolean;
 }) {
-  const handleClick = useCallback(() => {
+  const longPressTimerRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
+  const resetLongPressRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
+  const didLongPressRef = useRef(false);
+  const suppressClickUntilRef = useRef(0);
+
+  const cancelLongPress = useCallback(() => {
+    if (longPressTimerRef.current) {
+      window.clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  }, []);
+
+  const markLongPressHandled = useCallback(() => {
+    didLongPressRef.current = true;
+    suppressClickUntilRef.current = Date.now() + 700;
+    if (resetLongPressRef.current) window.clearTimeout(resetLongPressRef.current);
+    resetLongPressRef.current = window.setTimeout(() => {
+      didLongPressRef.current = false;
+    }, 800);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (longPressTimerRef.current) window.clearTimeout(longPressTimerRef.current);
+      if (resetLongPressRef.current) window.clearTimeout(resetLongPressRef.current);
+    };
+  }, []);
+
+  const handleClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    if (Date.now() < suppressClickUntilRef.current) {
+      e.preventDefault();
+      return;
+    }
     if (status === "won" || status === "lost") return;
     onReveal(row, col);
   }, [row, col, status, onReveal]);
 
   const handleRightClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
+    if (didLongPressRef.current) {
+      didLongPressRef.current = false;
+      return;
+    }
     if (!flagsEnabled) return;
     if (status === "won" || status === "lost" || cell.isRevealed) return;
     onFlag(row, col);
@@ -54,12 +90,28 @@ function Cell({
     onFlag(row, col);
   }, [row, col, status, cell.isRevealed, flagsEnabled, onFlag]);
 
+  const handlePointerDown = useCallback((e: React.PointerEvent<HTMLButtonElement>) => {
+    if (e.pointerType === "mouse") return;
+    if (!flagsEnabled) return;
+    if (status === "won" || status === "lost" || cell.isRevealed) return;
+
+    cancelLongPress();
+    longPressTimerRef.current = window.setTimeout(() => {
+      markLongPressHandled();
+      handleLongPress();
+    }, 450);
+  }, [cancelLongPress, cell.isRevealed, flagsEnabled, handleLongPress, markLongPressHandled, status]);
+
   const size = mobileCompact ? "" : "w-9 h-9 md:w-10 md:h-10";
   const mobileCellSize = mobileCompact
     ? ({
         width: "var(--mm-mobile-cell-size)",
         height: "var(--mm-mobile-cell-size)",
         minWidth: "var(--mm-mobile-cell-size)",
+        touchAction: "manipulation",
+        WebkitTouchCallout: "none",
+        WebkitUserSelect: "none",
+        userSelect: "none",
       } as CSSProperties)
     : undefined;
 
@@ -127,6 +179,10 @@ function Cell({
         }}
         onClick={handleClick}
         onContextMenu={handleRightClick}
+        onPointerDown={handlePointerDown}
+        onPointerUp={cancelLongPress}
+        onPointerCancel={cancelLongPress}
+        onPointerLeave={cancelLongPress}
       >
         {mobileCompact
           ? <span style={{ width: "calc(var(--mm-mobile-cell-size) * 0.54)", height: "calc(var(--mm-mobile-cell-size) * 0.54)", display: "flex" }}><RacingFlagIcon size="100%" color="var(--mm-amber)" /></span>
@@ -162,6 +218,10 @@ function Cell({
       }}
       onClick={handleClick}
       onContextMenu={handleRightClick}
+      onPointerDown={handlePointerDown}
+      onPointerUp={cancelLongPress}
+      onPointerCancel={cancelLongPress}
+      onPointerLeave={cancelLongPress}
     />
   );
 }
