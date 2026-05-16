@@ -4,6 +4,7 @@ import { test } from "node:test";
 import {
   applyTimedBoardClear,
   getBestLeaderboardRows,
+  getPlayerClassicRanks,
   LEADERBOARD_PERIODS,
   RANKED_GAME_MODES,
   TIMED_MODE_INITIAL_SECONDS,
@@ -50,6 +51,23 @@ test("classic and no-flags leaderboards rank lower best time first", () => {
   assert.deepEqual(
     rows.map(row => row.scoreLabel),
     ["38.21 sec", "43.77 sec"]
+  );
+});
+
+test("profile ranks are absent until the player has a classic win", () => {
+  const attempts = [
+    { playerId: "you", mode: "classic", status: "lost", seconds: 0 },
+    { playerId: "you", mode: "classic", status: "lost", seconds: 0 },
+    { playerId: "ada", mode: "classic", status: "won", seconds: 130 },
+  ];
+  const profiles = [
+    { playerId: "you", city: "Almaty" },
+    { playerId: "ada", city: "Almaty" },
+  ];
+
+  assert.deepEqual(
+    getPlayerClassicRanks(attempts, profiles, "you"),
+    { globalRank: null, cityRank: null }
   );
 });
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../contexts/AuthContext";
+import { getPlayerClassicRanks } from "../components/game/gameRules.mjs";
 
 export type RecentGame = {
   mode: string;
@@ -56,7 +57,7 @@ export function useProfileStats() {
     let cancelled = false;
 
     async function load() {
-      const [profileRes, attemptsRes] = await Promise.all([
+      const [profileRes, attemptsRes, classicLeaderboardRes] = await Promise.all([
         supabase
           .from("user_profiles")
           .select("username, city, member_since, xp")
@@ -67,27 +68,42 @@ export function useProfileStats() {
           .select("mode, status, time_seconds, mines_found, created_at")
           .eq("user_id", user!.id)
           .order("created_at", { ascending: false }),
+        supabase
+          .from("game_attempts")
+          .select("user_id, mode, status, time_seconds")
+          .eq("mode", "classic")
+          .eq("status", "won")
+          .not("time_seconds", "is", null),
       ]);
 
       const profile = profileRes.data;
       const attempts = attemptsRes.data ?? [];
       const xp = profile?.xp ?? 0;
-
-      const [rankRes, cityRankRes] = await Promise.all([
-        supabase
-          .from("user_profiles")
-          .select("*", { count: "exact", head: true })
-          .gt("xp", xp),
-        profile?.city
-          ? supabase
-              .from("user_profiles")
-              .select("*", { count: "exact", head: true })
-              .eq("city", profile.city)
-              .gt("xp", xp)
-          : Promise.resolve({ count: 0 as number | null }),
-      ]);
-      const globalRank = (rankRes.count ?? 0) + 1;
-      const cityRank = profile?.city ? (cityRankRes.count ?? 0) + 1 : null;
+      const classicLeaderboardAttempts = classicLeaderboardRes.data ?? [];
+      const leaderboardUserIds = [...new Set(classicLeaderboardAttempts.map(a => a.user_id))];
+      const { data: leaderboardProfilesData } = leaderboardUserIds.length > 0
+        ? await supabase
+            .from("user_profiles")
+            .select("user_id, city")
+            .in("user_id", leaderboardUserIds)
+        : { data: [] };
+      const leaderboardProfiles = (leaderboardProfilesData ?? []).map(p => ({
+        playerId: p.user_id,
+        city: p.city,
+      }));
+      if (profile && !leaderboardProfiles.some(p => p.playerId === user!.id)) {
+        leaderboardProfiles.push({ playerId: user!.id, city: profile.city });
+      }
+      const { globalRank, cityRank } = getPlayerClassicRanks(
+        classicLeaderboardAttempts.map(a => ({
+          playerId: a.user_id,
+          mode: a.mode,
+          status: a.status,
+          seconds: a.time_seconds,
+        })),
+        leaderboardProfiles,
+        user!.id
+      );
 
       const gamesPlayed = attempts.length;
       const wins = attempts.filter(a => a.status === "won").length;

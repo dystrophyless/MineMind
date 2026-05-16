@@ -65,3 +65,28 @@ export function getBestLeaderboardRows(attempts, mode, period) {
       };
     });
 }
+
+export function getPlayerClassicRanks(attempts, profiles, playerId) {
+  const profilesByPlayer = new Map(profiles.map(profile => [profile.playerId, profile]));
+  const classicWins = attempts
+    .filter(attempt =>
+      attempt.mode === "classic" &&
+      attempt.status === "won" &&
+      Number.isFinite(attempt.seconds)
+    )
+    .map(attempt => ({ ...attempt, period: "allTime" }));
+
+  const globalRows = getBestLeaderboardRows(classicWins, "classic", "allTime");
+  const globalIndex = globalRows.findIndex(row => row.playerId === playerId);
+  const globalRank = globalIndex === -1 ? null : globalIndex + 1;
+  const playerCity = profilesByPlayer.get(playerId)?.city ?? null;
+  const cityRank = playerCity
+    ? (() => {
+        const cityRows = globalRows.filter(row => profilesByPlayer.get(row.playerId)?.city === playerCity);
+        const cityIndex = cityRows.findIndex(row => row.playerId === playerId);
+        return cityIndex === -1 ? null : cityIndex + 1;
+      })()
+    : null;
+
+  return { globalRank, cityRank };
+}
