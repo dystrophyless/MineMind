@@ -3,15 +3,17 @@ import { test } from "node:test";
 
 import {
   applyTimedBoardClear,
+  calculateXpAward,
   getBestLeaderboardRows,
   getPlayerClassicRanks,
+  getXpLevelProgress,
   LEADERBOARD_PERIODS,
   RANKED_GAME_MODES,
   TIMED_MODE_INITIAL_SECONDS,
 } from "../src/app/components/game/gameRules.mjs";
 
-test("timed mode starts at 3 minutes and adds 5 seconds after a cleared board", () => {
-  assert.equal(TIMED_MODE_INITIAL_SECONDS, 180);
+test("timed mode starts at 1 minute and adds 5 seconds after a cleared board", () => {
+  assert.equal(TIMED_MODE_INITIAL_SECONDS, 60);
 
   assert.deepEqual(
     applyTimedBoardClear({ secondsLeft: 37, minesFound: 23, correctFlags: 4 }),
@@ -69,6 +71,38 @@ test("profile ranks are absent until the player has a classic win", () => {
     getPlayerClassicRanks(attempts, profiles, "you"),
     { globalRank: null, cityRank: null }
   );
+});
+
+test("XP rewards participation, wins, speed, and timed mines", () => {
+  assert.equal(calculateXpAward({ mode: "classic", status: "lost", timeSeconds: 8 }), 10);
+  assert.equal(calculateXpAward({ mode: "classic", status: "won", timeSeconds: 130 }), 130);
+  assert.equal(calculateXpAward({ mode: "noFlags", status: "won", timeSeconds: 48 }), 160);
+  assert.equal(calculateXpAward({ mode: "timed", status: "lost", minesFound: 12 }), 82);
+  assert.equal(calculateXpAward({ mode: "daily", status: "won", timeSeconds: 90 }), 200);
+});
+
+test("XP levels progress through 100, 250, 500, 1000, then doubling thresholds", () => {
+  assert.deepEqual(getXpLevelProgress(0), {
+    level: 1,
+    currentLevelXp: 0,
+    nextLevelXp: 100,
+    progressXp: 0,
+    requiredXp: 100,
+  });
+  assert.deepEqual(getXpLevelProgress(249), {
+    level: 2,
+    currentLevelXp: 100,
+    nextLevelXp: 250,
+    progressXp: 149,
+    requiredXp: 150,
+  });
+  assert.deepEqual(getXpLevelProgress(1000), {
+    level: 5,
+    currentLevelXp: 1000,
+    nextLevelXp: 2000,
+    progressXp: 0,
+    requiredXp: 1000,
+  });
 });
 
 test("ranked leaderboard has three game modes and three periods", () => {
