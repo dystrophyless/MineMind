@@ -7,12 +7,7 @@ import { useProfileStats } from "../hooks/useProfileStats";
 import { SettingsControls } from "./SettingsControls";
 import { CITY_COUNTRY_MAP } from "../data/cities";
 import { useAuth } from "../contexts/AuthContext";
-
-const BADGE_META: Record<string, { name: TranslationKey; desc: TranslationKey; icon: ReactNode }> = {
-  speed:  { name: "profileBadgeSpeed",  desc: "profileBadgeSpeedDesc",  icon: <FlashIcon     size={24} color="var(--mm-amber)" /> },
-  streak: { name: "profileBadgeStreak", desc: "profileBadgeStreakDesc", icon: <FireIcon      size={24} color="var(--mm-amber)" /> },
-  daily:  { name: "profileBadgeDaily",  desc: "profileBadgeDailyDesc",  icon: <StopWatchIcon size={24} color="var(--mm-amber)" /> },
-};
+import { ACHIEVEMENT_DEFS } from "../services/achievements";
 
 const RU_MEMBER_MONTHS = [
   "января",
@@ -100,13 +95,13 @@ export function ProfileStats() {
   })();
 
   const levelTitleKey = (() => {
-    const xp = profileData.xp;
-    if (xp < 500)   return "levelBeginner";
-    if (xp < 1500)  return "levelExplorer";
-    if (xp < 3000)  return "levelTactician";
-    if (xp < 5000)  return "levelStrategist";
-    if (xp < 8000)  return "levelExpert";
-    if (xp < 12000) return "levelMaster";
+    const level = profileData.level;
+    if (level <= 1) return "levelBeginner";
+    if (level === 2) return "levelExplorer";
+    if (level === 3) return "levelTactician";
+    if (level === 4) return "levelStrategist";
+    if (level === 5) return "levelExpert";
+    if (level === 6) return "levelMaster";
     return "levelGrandmaster";
   })() as Parameters<typeof t>[0];
 
@@ -130,11 +125,11 @@ export function ProfileStats() {
     change: `${profileData.favModePercentage}% ${t("profileOfGames")}`,
   };
 
-  const badges = profileData.badges.flatMap(b => {
-    const meta = BADGE_META[b.key];
-    return meta ? [{ key: b.key, unlocked: b.unlocked, ...meta }] : [];
-  });
-  const unlockedBadges = badges.filter((badge) => badge.unlocked).length;
+  const badges = ACHIEVEMENT_DEFS.map(def => ({
+    ...def,
+    unlocked: profileData.badges.find(b => b.key === def.key)?.unlocked ?? false,
+  }));
+  const unlockedBadges = badges.filter(b => b.unlocked).length;
 
   const recentGames: { mode: string; time: string; result: RecentGameResult; date: string }[] = profileData.recentGames.map(g => ({
     mode: t(modeKeyMap[g.mode] ?? "mobileModeClassic"),
@@ -189,9 +184,9 @@ export function ProfileStats() {
             <div>
               <div className="flex justify-between mb-1.5">
                 <span style={{ color: "var(--mm-text-3)", fontSize: "11px" }}>{t("profileLevel")} {profileData.level} — {t(levelTitleKey)}</span>
-                <span style={{ color: "var(--mm-amber)", fontSize: "11px" }}>{`${profileData.xp.toLocaleString()} / 10,000 XP`}</span>
+                <span style={{ color: "var(--mm-amber)", fontSize: "11px" }}>{`${profileData.xp.toLocaleString()} / ${profileData.nextLevelXp.toLocaleString()} XP`}</span>
               </div>
-              <ProgressBar value={profileData.xp} max={10000} color="var(--mm-amber)" />
+              <ProgressBar value={profileData.xpProgressXp} max={profileData.xpRequiredXp} color="var(--mm-amber)" />
             </div>
           </div>
 
@@ -286,13 +281,22 @@ export function ProfileStats() {
             <p style={{ color: "var(--mm-text)", fontSize: "14px", fontWeight: 700 }}>{t("profileAchievements")}</p>
             <span style={{ color: "var(--mm-text-3)", fontSize: "12px" }}>{unlockedBadges} / {badges.length} {t("profileUnlocked")}</span>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {badges.map(b => (
-              <div key={b.key} className="rounded-xl p-4 text-center flex flex-col items-center gap-2" style={{ background: b.unlocked ? "var(--mm-surface-2)" : "var(--mm-surface-1)", border: `1px solid ${b.unlocked ? "var(--mm-border-2)" : "var(--mm-border)"}`, opacity: b.unlocked ? 1 : 0.4, filter: b.unlocked ? "none" : "grayscale(1)" }}>
+              <div
+                key={b.key}
+                className="rounded-xl p-4 text-center flex flex-col items-center gap-2"
+                style={{
+                  background: b.unlocked ? "var(--mm-surface-2)" : "var(--mm-surface-1)",
+                  border: `1px solid ${b.unlocked ? "var(--mm-border-2)" : "var(--mm-border)"}`,
+                  opacity: b.unlocked ? 1 : 0.4,
+                  filter: b.unlocked ? "none" : "grayscale(1)",
+                }}
+              >
                 <span className="h-6 flex items-center justify-center">{b.icon}</span>
                 <div>
-                  <p style={{ color: "var(--mm-text)", fontSize: "11px", fontWeight: 600 }}>{t(b.name)}</p>
-                  <p style={{ color: "var(--mm-text-3)", fontSize: "10px" }}>{t(b.desc)}</p>
+                  <p style={{ color: "var(--mm-text)", fontSize: "11px", fontWeight: 600 }}>{t(b.nameKey)}</p>
+                  <p style={{ color: "var(--mm-text-3)", fontSize: "10px" }}>{t(b.descKey)}</p>
                 </div>
               </div>
             ))}
