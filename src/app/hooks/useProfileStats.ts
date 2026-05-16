@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../contexts/AuthContext";
-import { getPlayerClassicRanks } from "../components/game/gameRules.mjs";
+import { getPlayerClassicRanks, getXpLevelProgress } from "../components/game/gameRules.mjs";
+import { ACHIEVEMENT_DEFS } from "../services/achievements";
 
 export type RecentGame = {
   mode: string;
@@ -30,6 +31,9 @@ export type ProfileData = {
   memberSince: string;
   xp: number;
   level: number;
+  nextLevelXp: number;
+  xpProgressXp: number;
+  xpRequiredXp: number;
   gamesPlayed: number;
   gamesToday: number;
   winRate: number;
@@ -57,7 +61,7 @@ export function useProfileStats() {
     let cancelled = false;
 
     async function load() {
-      const [profileRes, attemptsRes, classicLeaderboardRes] = await Promise.all([
+      const [profileRes, attemptsRes, classicLeaderboardRes, achievementsRes] = await Promise.all([
         supabase
           .from("user_profiles")
           .select("username, city, member_since, xp")
@@ -74,6 +78,10 @@ export function useProfileStats() {
           .eq("mode", "classic")
           .eq("status", "won")
           .not("time_seconds", "is", null),
+        supabase
+          .from("user_achievements")
+          .select("achievement_key")
+          .eq("user_id", user!.id),
       ]);
 
       const profile = profileRes.data;
@@ -187,21 +195,25 @@ export function useProfileStats() {
         };
       });
 
-      const badges: BadgeState[] = [
-        { key: "speed",   unlocked: bestTimeSeconds !== null && bestTimeSeconds < 60 },
-        { key: "streak",  unlocked: streak >= 7 },
-        { key: "daily",   unlocked: attempts.filter(a => a.mode === "daily" && a.status === "won").length >= 10 },
-      ];
+      const unlockedKeys = new Set((achievementsRes.data ?? []).map(r => r.achievement_key));
+      const badges: BadgeState[] = ACHIEVEMENT_DEFS.map(def => ({
+        key: def.key,
+        unlocked: unlockedKeys.has(def.key),
+      }));
 
       if (cancelled) return;
       const resolvedXp = profile?.xp ?? 0;
+      const xpProgress = getXpLevelProgress(resolvedXp);
       setData({
         username: profile?.username ?? user!.email?.split("@")[0] ?? "You",
         avatarInitial: (profile?.username?.[0] ?? "Y").toUpperCase(),
         city: profile?.city ?? null,
         memberSince: profile?.member_since ?? new Date().toISOString(),
         xp: resolvedXp,
-        level: Math.max(1, Math.floor(resolvedXp / 500) + 1),
+        level: xpProgress.level,
+        nextLevelXp: xpProgress.nextLevelXp,
+        xpProgressXp: xpProgress.progressXp,
+        xpRequiredXp: xpProgress.requiredXp,
         gamesPlayed,
         gamesToday,
         winRate,
